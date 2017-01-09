@@ -1,11 +1,11 @@
 {%- if cookiecutter.py_ver.startswith('3') %}
 python3
 python3-dev
-python3-venv
+python3-virtualenv
 {%- else %}
 python
 python-dev
-python-venv
+python-virtualenv
 {% endif %}
 apt-utils
 binutils
@@ -24,7 +24,6 @@ nano
 nginx
 python{{cookiecutter.py_ver}}
 python{{cookiecutter.py_ver}}-dev
-python{{cookiecutter.py_ver}}-venv
 python-dev
 software-properties-common
 sudo
@@ -33,3 +32,4 @@ tzdata
 wget
 wv
 poppler-utils
+rsync

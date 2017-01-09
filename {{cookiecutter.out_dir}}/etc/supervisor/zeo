@@ -1,0 +1,12 @@
+[program:zeo]
+command = bash -c 'zeo=bin/zeoserver && if [ -e bin/zeo ];then zeo=bin/zeo;fi && $zeo -f fg'
+autostart = true
+autorestart = true
+killasgroup = true
+stopasgroup = true
+directory = /code
+user = plone:plone
+stopsignal = KILL
+stopwaitsecs = 3
+stdout_logfile=/dev/stdout
+stderr_logfile=/dev/stderr

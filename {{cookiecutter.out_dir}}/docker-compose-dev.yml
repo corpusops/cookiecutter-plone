@@ -4,59 +4,62 @@ x-images:
     command: 'sh -c "while true;do echo notstarted;sleep 65000;done"'
     entrypoint: 'sh -c "while true;do echo notstarted;sleep 65000;done"'
     restart: "no"
-services:
-  nginx: {<<: [ *bypass ]}
-  cron: {<<: [ *bypass ]}
-  haproxy: {<<: [ *bypass ]}
-{% for i in range(cookiecutter.prod_instances|int - 1 + 1) -%}
-  {{cookiecutter.app_type}}{{loop.index0}}:
-    <<: [ *bypass ]
-{%- endfor %}
-  {{cookiecutter.app_type}}1:
+  plone: &plone
     environment:
     - BUILDOUT=buildout.cfg
-    command: "gosu {{cookiecutter.app_type}} /code/init/start.sh"
     volumes:
       {%-if cookiecutter.use_submodule_for_deploy_code %}
-      - ./{{cookiecutter.deploy_project_dir}}/prod/sudoer:/etc/sudoers.d/$APP_TYPE
+      - ./{{cookiecutter.deploy_project_dir}}/prod/docker-initialize.py:/code/init/docker-initialize.py
       - ./{{cookiecutter.deploy_project_dir}}/prod/init.sh:/code/init/init.sh
-      - ./{{cookiecutter.deploy_project_dir}}/prod/start.sh:/code/init/start.sh
-      - ./{{cookiecutter.deploy_project_dir}}/prod/cron.sh:/code/init/cron.sh
+      - ./{{cookiecutter.deploy_project_dir}}/prod/sudoer:/etc/sudoers.d/$APP_TYPE
       {%-else %}
-      - ./prod/sudoer:/etc/sudoers.d/$APP_TYPE
+      - ./prod/docker-initialize.py:/code/init/docker-initialize.py
       - ./prod/init.sh:/code/init/init.sh
-      - ./prod/start.sh:/code/init/start.sh
-      - ./prod/cron.sh:/code/init/cron.sh
+      - ./prod/sudoer:/etc/sudoers.d/$APP_TYPE
       {%- endif%}
+      - ./.ansible:/code/.ansible
+      - ./.coveragerc:/code/.coveragerc
+      - ./.editorconfig:/code/.editorconfig
+      - ./.git:/code/.git
+      - ./.gitignore:/code/.gitignore
+      - ./.gitlab-ci.yml:/code/.gitlab-ci.yml
+      - ./.gitmodules:/code/.gitmodules
+      - ./buildout.cfg:/code/buildout.cfg
+      - ./buildout-prod.cfg:/code/buildout-prod.cfg
+      - ./buildout-prod-clientonly.cfg:/code/buildout-prod-clientonly.cfg
+      - ./docker-compose-build.yml:/code/docker-compose-build.yml
+      - ./docker-compose-dev.yml:/code/docker-compose-dev.yml
+      - ./docker-compose-prod.yml:/code/docker-compose-prod.yml
+      - ./docker-compose.yml:/code/docker-compose.yml
+      - ./etc:/code/etc
+      - ./etc/crontabs/:/rootfs/etc/crontabs
+      - ./etc/logrotate.d/:/rootfs/etc/logrotate.d
       - ./local:/code/local
-      - ./src:/code/src
-      - ./requirements.txt:/code/requirements.txt
+      - ./products:/code/products
       - ./requirements-dev.txt:/code/requirements-dev.txt
-    volumes:
-      - "./.ansible:/code/.ansible"
-      - "./bootstrap-buildout.py:/code/bootstrap-buildout.py"
-      - "./buildout.cfg:/code/buildout.cfg"
-      - "./buildout-prod.cfg:/code/buildout-prod.cfg"
-      - "./buildout-prod-clientonly.cfg:/code/buildout-prod-clientonly.cfg"
-      - "./.coveragerc:/code/.coveragerc"
-      - "./docker-compose-build.yml:/code/docker-compose-build.yml"
-      - "./docker-compose-dev.yml:/code/docker-compose-dev.yml"
-      - "./docker-compose-prod.yml:/code/docker-compose-prod.yml"
-      - "./docker-compose.yml:/code/docker-compose.yml"
-      - "./.editorconfig:/code/.editorconfig"
-      - "./eggs:/code/eggs"
-      - "./etc:/code/etc"
-      - "./.git:/code/.git"
-      - "./.gitignore:/code/.gitignore"
-      - "./.gitlab-ci.yml:/code/.gitlab-ci.yml"
-      - "./.gitmodules:/code/.gitmodules"
-      - "./MANIFEST.in:/code/MANIFEST.in"
-      - "./products:/code/products"
-      - "./README.md:/code/README.md"
-      - "./setup.cfg:/code/setup.cfg"
-      - "./setup.py:/code/setup.py"
-      - "./src:/code/src"
-      - "./Vagrantfile:/code/Vagrantfile"
-      - "./www:/code/www"
-    ports:
-      - "8080:8080"
+      - ./requirements.txt:/code/requirements.txt
+      - ./setup.cfg:/code/setup.cfg
+      - ./setup.py:/code/setup.py
+      - ./src:/code/src
+      - ./www:/code/www
+      - ./MANIFEST.in:/code/MANIFEST.in
+      - ./README.md:/code/README.md
+      # you can uncomment this to have a local cache for eggs
+      # and run buildout more quickly, but remember that
+      # you need to run manually buildout on updates for your eggs not to
+      # be eventually stale.
+      # - buildoutcache:/code/var/cache
+services:
+  nginx:
+    # <<: [ *bypass ]
+    ports: ["80:80"]
+  traefik:
+    # <<: [ *bypass ]
+    ports: ["8079:80"]
+  zeo: {<<: [ *plone ]}
+{% for i in range(cookiecutter.prod_instances|int) %}  {{cookiecutter.app_type}}{%if i%}{{i+1}}{%endif%}:
+    <<: [ *plone{%if i%}, *bypass{%endif%} ]
+{% if not i%}    ports: ["8080:8080"]{%endif%}
+{%endfor %}
+volumes:
+  buildoutcache:

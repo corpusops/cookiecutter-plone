@@ -39,12 +39,12 @@ SYMLINKS_FILES = {
     "../../{{cookiecutter.deploy_project_dir}}/.ansible/playbooks/deploy_key_teardown.yml",  #noqa
     ".ansible/playbooks/site.yml":
     "../../{{cookiecutter.deploy_project_dir}}/.ansible/playbooks/site.yml",  #noqa
-    "tox.ini":    "{{cookiecutter.deploy_project_dir}}/tox.ini",  #noqa
+    # "tox.ini":    "{{cookiecutter.deploy_project_dir}}/tox.ini",  #noqa
     "Dockerfile": "{{cookiecutter.deploy_project_dir}}/Dockerfile",  #noqa
 }
 SYMLINKS = {}
 SYMLINKS.update(SYMLINKS_DIRS)
-SYMLINKS_DIRS.update(SYMLINKS_FILES)
+SYMLINKS.update(SYMLINKS_FILES)
 GITSCRIPT = """
 set -ex
 if [ ! -e .git ];then git init;fi
@@ -74,39 +74,29 @@ if [ ! -e "{{cookiecutter.deploy_project_dir}}/.git" ];then
 """
 EGITSCRIPT = """
 {%raw%}vv() {{ echo "$@">&2;"$@"; }}{%endraw%}
-{% if cookiecutter.remove_cron %}
-rm -f crontab
-sed -i -re "/ADD .*cron/d" Dockerfile
-sed -i -re "/CMD .*cron/d" Dockerfile
-{% endif %}
 {% for i in ['dev', 'prod', 'qa', 'staging'] -%}
 {% if not cookiecutter['{0}_host'.format(i)]%}
 git rm -rf \
    .ansible/inventory/group_vars/{{i}} \
-   src/{{cookiecutter.plone_project_name}}/settings/instances/{{i}}* \
         || /bin/true
 rm -rfv \
-   .ansible/inventory/group_vars/{{i}} \
-   src/{{cookiecutter.plone_project_name}}/settings/instances/{{i}}*
+   .ansible/inventory/group_vars/{{i}}
 {% endif %}
 {% endfor %}
-{% if cookiecutter.no_private %}
-rm -rf private
-sed -i -re "/ADD private/d" Dockerfile
-{% endif %}
-{% if cookiecutter.no_lib %}
-sed -i -re "/ADD lib/d" Dockerfile
-rm -rf lib
-{% endif %}
+if [ -e Dockerfile ] && [ ! -h Dockerfile ];then
 sed -i -re \
 	"s/PY_VER=.*/PY_VER={{cookiecutter.py_ver}}/g" \
 	Dockerfile
 sed -i -re \
-	"s/project/{{cookiecutter.plone_project_name}}/g" \
-	prod/*sh Dockerfile
+	Dockerfile
+fi
+if ( find prod/*sh 2>/dev/null );then
+sed -i -re \
+	prod/*sh
+fi
 set +x
+{% if not cookiecutter.use_submodule_for_deploy_code %}
 while read f;do
-echo $f
     if ( egrep -q "local/{{cookiecutter.app_type}}" "$f" );then
         echo "rewrite: $f"
         vv sed -i -r \
@@ -115,6 +105,7 @@ echo $f
         "$f"
     fi
 done < <( find -type f|egrep -v "((^./(\.tox|\.git|local))|/static/)"; )
+{% endif %}
 set -x
         """
 
@@ -163,10 +154,6 @@ def main():
         s += '\nrsync -azv {0}/prod/ prod/'.format(
             "{{cookiecutter.deploy_project_dir}}")
         s += '\ngit add .ansible'
-        {% if cookiecutter.remove_cron %}
-        s += ('\nsed -i -re '
-              '"s/ cron//g" .ansible/playbooks/roles/*/*/*l' )
-        {% endif %}
     s += EGITSCRIPT
     subprocess.check_call(["bash", "-c", s.format(template=TEMPLATE)])
     print(MOTD)

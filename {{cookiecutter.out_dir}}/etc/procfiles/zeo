@@ -1,0 +1,2 @@
+zeo: gosu {{cookiecutter.app_type}} bash -c 'cd /code && zeo=bin/zeoserver && if [ -e bin/zeo ];then zeo=bin/zeo;fi && $zeo -f fg'
+crond: cron -f

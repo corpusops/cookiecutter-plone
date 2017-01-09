@@ -21,13 +21,14 @@ if  [[ -n $SHELL_DEBUG ]];then set -x;fi
 
 shopt -s extglob
 
+VENV=venv
 APP={{cookiecutter.app_type}}
 APP_USER=${APP_USER:-${APP}}
 APP_CONTAINER=${APP_CONTAINER:-${APP}}
 DEBUG=${DEBUG-}
 NO_BACKGROUND=${NO_BACKGROUND-}
 BUILD_PARALLEL=${BUILD_PARALLEL:-1}
-BUILD_CONTAINERS="$APP_CONTAINER{%-if cookiecutter.remove_cron%} cron{%endif%}"
+BUILD_CONTAINERS="$APP_CONTAINER zeo"
 EDITOR=${EDITOR:-vim}
 DIST_FILES_FOLDERS=". src/*/settings"
 CONTROL_COMPOSE_FILES="${CONTROL_COMPOSE_FILES:-docker-compose.yml docker-compose-dev.yml}"
@@ -39,7 +40,7 @@ set_dc() {
     for i in $COMPOSE_FILES;do
         DC="${DC} -f $i"
     done
-    DCB="$DC -f docker-compose-build.yml"
+    DCB="$DC -f docker-compose-build.yml -f docker-compose-build-dev.yml"
 }
 
 log(){ echo "$@">&2;}
@@ -62,10 +63,10 @@ _shell() {
     local NO_VIRTUALENV=${NO_VIRTUALENV-}
     local NO_NVM=${NO_VIRTUALENV-}
     local NVMRC=${NVMRC:-.nvmrc}
-    local NVM_PATH=${VENV_PATH:-..}
+    local NVM_PATH=${NVM_PATH:-..}
     local NVM_PATHS=${NVMS_PATH:-${NVM_PATH}}
-    local VENV_PATH=${VENV_PATH:-../venv}
-    local VENV_PATHS=${VENV_PATHS:-${VENV_PATH}}
+    local VENV_NAME=${VENV_NAME:-$VENV}
+    local VENV_PATHS=${VENV_PATHS:-./$VENV_NAME ../$VENV_NAME}
     local DOCKER_SHELL=${DOCKER_SHELL-}
     local run_mode_args=""
     local pre="DOCKER_SHELL=\"$DOCKER_SHELL\";touch \$HOME/.control_bash_rc;
@@ -214,7 +215,11 @@ stop_containers() {
 #  fg: launch app container in foreground (using entrypoint)
 do_fg() {
     stop_containers
-    vv $DC run --rm --no-deps --use-aliases --service-ports $APP_CONTAINER $@
+	if [[ -n $@ ]];then
+        vv $DC run --rm --no-deps --use-aliases --service-ports $APP_CONTAINER ${@}
+    else
+        vv $DC run --rm --no-deps --use-aliases --service-ports $APP_CONTAINER gosu plone bin/instance fg
+    fi
 }
 
 #  build [$args]: rebuild app containers ($BUILD_CONTAINERS)
@@ -286,28 +291,20 @@ do_yamldump() {
 # {{cookiecutter.app_type.upper()}} specific
 #  python: enter python interpreter
 do_python() {
-    do_usershell ../venv/bin/python $@
+    do_usershell $VENV/bin/python $@
 }
 
-#  manage [$args]: run manage.py commands
-do_manage() {
-    do_python manage.py $@
+#  instance [$args]: run bin/instance commands
+do_instance() {
+    do_usershell bin/instance $@
 }
-
-#  runserver [$args]: alias for fg
-do_runserver() {
-    do_fg "$@"
-}
-
-do_run_server() { do_runserver $@; }
-
 #  tests [$tests]: run tests
 do_test() {
     local bargs=${@:-tests}
     stop_containers
     set -- vv do_shell \
         "chown {{cookiecutter.app_type}} ../.tox
-        && gosu {{cookiecutter.app_type}} ../venv/bin/tox -c ../tox.ini -e $bargs"
+        && gosu {{cookiecutter.app_type}} $VENV/bin/tox -c ../tox.ini -e $bargs"
     "$@"
 }
 
@@ -324,8 +321,8 @@ do_main() {
     local actions="up_corpusops|shell|usage|install_docker|setup_corpusops"
     actions="$actions|yamldump|stop|usershell|exec|userexec|dexec|duserexec|dcompose"
     actions="$actions|init|up|fg|pull|build|buildimages|down"
-    actions_django="runserver|tests|test|coverage|linting|manage|python"
-    actions="@($actions|$actions_django)"
+    actions_{{cookiecutter.app_type}}="tests|test|coverage|linting|instance|python"
+    actions="@($actions|$actions_{{cookiecutter.app_type}})"
     action=${1-}
     if [[ -n $@ ]];then shift;fi
     set_dc

@@ -195,17 +195,12 @@ The high level infrastructure:
     LXC---DOCKER
             |
             +--- nginx: main reverse proxy
-            |
-            +--- {{cookiecutter.app_type}}: app
-            |            (share a special 'static' & medias volume
-            |             nginx which serve the application statis & medias)
-            |
-            +--- pgsql
-            |
-            +--- redis
-            |
-            +--- backup
-            +--- ...
+              |
+              +- traefik
+               +-+- n x {{cookiecutter.app_type}}: app
+                 |       (share a special 'static' & medias volume
+                 |       nginx which serve the application statis & medias)
+                 +--- zeo
     ```
 
 ## Bootstrap env

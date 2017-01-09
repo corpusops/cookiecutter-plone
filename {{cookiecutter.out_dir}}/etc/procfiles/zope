@@ -1,0 +1,2 @@
+plone: gosu plone sh -c "cd /code && bin/instance console"
+crond: cron -f

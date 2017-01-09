@@ -5,32 +5,20 @@ x-images:
     <<: [ *env ]
     image: "${{'{'}}{{cookiecutter.app_type.upper()}}_IMAGE}:${{'{'}}{{cookiecutter.app_type.upper()}}_IMAGE_VERSION}"
     tty: true
-    image: "${PLONE_IMAGE}:${PLONE_IMAGE_VERSION}"
-    command: /bin/bash /code/init.sh instance
-    depends_on:
-      - zeo
-    working_dir: /code/src
+    image: "${PLONE_IMAGE}:${PLONE_IMAGE_VERSION}-dev"
+    command: instance start
+    working_dir: /code
     volumes:
     - logs:/code/var/logs/
-    - blob:/code/var/blob/
-    - zodb:/code/var/zodb/
+    - logs:/logs/
+    - data:/data
+    - backups:/data/backup
     - statics:/code/www
     environment:
-      BUILDOUT: "${BUILDOUT:-buildout-prod.cfg}"
-    working_dir: /code/src
-    command: /bin/bash /code/init/init.sh
-    volumes:
-      {%- if not cookiecutter.remove_cron %}
-      - crontab:/etc/cron.d/{{cookiecutter.app_type}}
-      {%- endif %}
-      - mediafiles:/code/public/media
-      - statics:/code/public/static
-      - logs:/logs/
+      BUILDOUT: "${BUILDOUT:-buildout.cfg}"
 services:
   mailcatcher:
-    <<: [ *env ]
     image: corpusops/mailhog
-    hostname: mailcatcher
     volumes: ["mails:/mails"]
     environment:
       MH_STORAGE: maildir
@@ -49,47 +37,46 @@ services:
         && pw=$$(MH_AUTH_FILE="" MailHog bcrypt "$${MAILCATCHER_PASSWORD:-mailcatcher}")
         && echo "$${MAILCATCHER_USER:-mailcatcher}:$$pw" > $$MH_AUTH_FILE
         && su mailhog -p -c MailHog
+    <<: [ *env ]
   nginx:
     <<: [ *env ]
-    restart: always
-    image: "{{cookiecutter.nginx_image}}",
-    depends_on:
-      - {{cookiecutter.app_type}}
+    image: "{{cookiecutter.nginx_image}}"
+    depends_on: [traefik, {{cookiecutter.app_type}}]
     volumes:
-      - ./prod/etc/nginx/vhost.conf.template:/etc/nginx/conf.d/vhost.conf.template
-      - htpasswd:/etc/nginx/htpasswd
-      - logs:/logs/
+    - ./etc/nginx/vhost.conf.template:/etc/nginx/conf.d/default.conf.template
+    - htpasswd:/etc/nginx/htpasswd
+    - logs:/logs/
     command: >
-      /bin/sh -c
-      "envsubst '
-      $$HOSTNAME
-      '< /etc/nginx/conf.d/vhost.conf.template
+      /bin/sh -c "
+      CONF_PREFIX=PLONE__ confenvsubst.sh /etc/nginx/conf.d/default.conf.template
       > /etc/nginx/conf.d/default.conf
-      && exec /bin/forego.sh"
+      && exec /bin/supervisord.sh"
     environment:
-    - FOREGO_PROCFILE=/etc/procfiles/nginx_logrotate.Procfile
-  {{cookiecutter.app_type}}:
-    <<: [ *{{cookiecutter.app_type}} ]
+    - SUPERVISORD_CONFIGS=/etc/supervisor.d/cron /etc/supervisor.d/nginx
+  traefik:
+    image: "{{cookiecutter.traefik_image}}"
+    entrypoint: >
+      /bin/traefik.sh --sendanonymoususage=false --defaultentrypoints=http
+      --accesslog --accesslog.bufferingsize=10 --loglevel=info
+      --rest --api --web --web.metrics
+    volumes:
+    - ./etc/traefik.toml:/traefik.toml
   zeo:
     <<: [ *{{cookiecutter.app_type}} ]
-    depends_on: [plone]
-    command: /bin/sh /code/init/init.sh zeo
-{% for i in range(cookiecutter.prod_instances|int - 1) -%}
-  {{cookiecutter.app_type}}{{loop.index0}}:
-    <<: [ *{{cookiecutter.app_type}} ]
+    command: zeoserver start
+{% for i in range(cookiecutter.prod_instances|int) %}
+  {{cookiecutter.app_type}}{%if i%}{{i+1}}{%endif%}:{%if not i%} &plone_worker{%endif%}
+    <<: [ *{{cookiecutter.app_type}}{%if i%}_worker{%endif%} ]
     depends_on: [zeo]
 {%- endfor %}
-  {%- if not cookiecutter.remove_cron %}
-  cron:
-    <<: [ *{{cookiecutter.app_type}} ]
-    depends_on: [plone]
-    command: /bin/sh /code/init/cron.sh
-  {%-endif%}
 volumes:
-  zopevar:
-  zodb:
-  blob:
+  data:
+  backups:
   logs:
   traefik:
   statics:
+  mails:
   htpasswd:
+  statics:
+    name: "${{'{'}}{{cookiecutter.app_type.upper()}}_NAME}-statics-${{'{'}}{{cookiecutter.app_type.upper()}}_IMAGE_VERSION}"
+    external: false

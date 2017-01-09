@@ -1,7 +1,12 @@
 # packages to put in global site packages in dev
-six
+six == {{cookiecutter.versions_six}}
+ordereddict == {{cookiecutter.versions_ordereddict}}
 # packages to put in global site packages
-wheel = {{cookiecutter.versions_wheel}}
-setuptools ={{cookiecutter.versions_setuptools}}
-pip ={{cookiecutter.versions_pip}}
-zc.buildout = {{cookiecutter.versions_zc_buildout}}
+wheel >= {{cookiecutter.versions_wheel}}
+setuptools == {{cookiecutter.versions_setuptools}}
+pip >= {{cookiecutter.versions_pip}}
+zc.buildout == {{cookiecutter.versions_zc_buildout}}
+{% if cookiecutter.use_sentry-%}
+# sentry
+raven == {{cookiecutter.versions_raven}}
+{%-endif %}

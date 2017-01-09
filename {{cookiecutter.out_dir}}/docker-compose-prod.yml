@@ -1,17 +1,24 @@
 version: '3.7'
 x-{{cookiecutter.app_type}}: &{{cookiecutter.app_type}}
-  environment: []
+  environment:
+    BUILDOUT: "${BUILDOUT:-buildout-prod.cfg}"
+  image: "${{'{'}}{{cookiecutter.app_type.upper()}}_IMAGE}:${{'{'}}{{cookiecutter.app_type.upper()}}_IMAGE_VERSION}"
 services:
+  mailcatcher:
+    restart: unless-stopped
   nginx:
-    ports:
-    - 80:80
-{% for i in range(cookiecutter.prod_instances|int - 1) -%}
-  {{cookiecutter.app_type}}{{loop.index0}}:
+    restart: unless-stopped
+    ports: ["80:80"]
+  traefik:
+    restart: unless-stopped
+    ports: ["8079:80"]
+{% for i in range(cookiecutter.prod_instances|int) %}
+  {{cookiecutter.app_type}}{%if i%}{{i+1}}{%endif%}:
     <<: [ *{{cookiecutter.app_type}} ]
+    restart: unless-stopped
     ports:
     - "{{8080+i}}:8080"
 {%- endfor %}
-  {% if not cookiecutter.remove_cron %}
-  cron:
+  zeo:
+    restart: unless-stopped
     <<: [ *{{cookiecutter.app_type}} ]
-  {%- endif%}

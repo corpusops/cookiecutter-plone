@@ -1,0 +1,28 @@
+debug = false
+logLevel = "ERROR"
+defaultEntryPoints = ["http"]
+entryPoints = { http = {address = ":80"}}
+# filePath = "log/traefik.log" / format: "common/json"
+traefikLog = { filePath = "os.Stdout", format = "common" }
+accessLog = { filePath = "os.Stdout", format = "common" }
+api = { entryPoint = "traefik", dashboard = true }
+ping = { entryPoint = "traefik", dashboard = true }
+[file]
+[frontends.plone]
+  backend = "plone"
+  passHostHeader = true
+  [frontends.plone.routes.plone]
+    rule = "PathPrefix:/"
+[backends.plone]
+    healthcheck = { path = "/", interval = "15s" }
+    [backends.plone.loadbalancer.stickiness]
+      cookieName = "__ac"
+{% for i in range(cookiecutter.prod_instances|int) %}
+    [backends.plone.servers.plone{%if i%}{{i}}{%endif%}]
+      url = "http://plone{% if i%}{{i}}{%endif%}:8080"
+{% endfor %}
+# Enable Docker configuration backend
+# [docker]
+#  endpoint = "tcp://10.10.10.10:2375" (Default: "unix:///var/run/docker.sock")
+#  domain = "docker.localhost"
+#  exposedByDefault = false

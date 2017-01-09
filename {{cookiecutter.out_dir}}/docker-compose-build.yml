@@ -1,13 +1,17 @@
 version: '3.7'
 x-images:
-  plone: &plone
-    build: {context: "."}
-    args:
-      PY_VER: "${PLONE_PY_VER:-{{cookiecutter.py_ver}}}"
-      BUILDOUT: "${BUILDOUT:-buildout.cfg}"
+  {{cookiecutter.app_type}}: &{{cookiecutter.app_type}}
+    build:
+      context: "."
+      args:
+        PY_VER: "${PLONE_PY_VER:-{{cookiecutter.py_ver}}}"
+        BUILDOUT: "${BUILDOUT:-buildout.cfg}"
 services:
-  {%- if not cookiecutter.remove_cron %}
-  cron: {<<: [ *{{cookiecutter.app_type}} ]}
-  {%-endif%}
-  plone: {<<: [ *plone ]}
-  zeo: {<<: [ *plone ]}
+  zeo: {<<: [ *{{cookiecutter.app_type}} ]}
+  {% for i in range(cookiecutter.prod_instances|int) %}
+  {{cookiecutter.app_type}}{%if i%}{{i+1}}{%endif%}:
+    <<: [ *{{cookiecutter.app_type}} ]
+    restart: unless-stopped
+    ports:
+    - "{{8080+i}}:8080"
+{%- endfor %}

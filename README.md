@@ -37,8 +37,6 @@ virtualenv --python=python3 ~/tools/cookiecutter
     - ``use_submodule_for_deploy_code=``: copy deploy submodule inside
       project for a standalone deployment (no common deploy)
     - ``py_ver=X.Yy``: python version to use
-    - ``remove_cron=y``: will remove cron image and related configuration
-    - ``enable_cron=``: will soft disable (comment crontab) without removing cron.
     - ``(qa|staging)_host=``: will disable generation for this env
     - ``tests_(staging|tests)=``: will disable those specific tests in CI
     - ``registry_is_gitlab_registry=y``: act that registry is gitlab based

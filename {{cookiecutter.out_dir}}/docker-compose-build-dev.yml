@@ -1,0 +1,9 @@
+version: '3.7'
+x-images:
+  {{cookiecutter.app_type}}: &{{cookiecutter.app_type}}
+    build: {context: ".", args: {BUILD_DEV: "y"}}
+services:
+  {% for i in range(cookiecutter.prod_instances|int) %}
+  {{cookiecutter.app_type}}{%if i%}{{i+1}}{%endif%}: {<<: [ *{{cookiecutter.app_type}} ]}
+  {%endfor%}
+  zeo: {<<: [ *{{cookiecutter.app_type}} ]}

@@ -7,7 +7,7 @@ All following commands must be run only once at project installation.
 
 ```sh
 git clone --recursive {{cookiecutter.git_project_url}}
-{%-if cookiecutter.use_submodule_for_deploy_code%}git submodule init --recursive  # only the fist time
+{%if cookiecutter.use_submodule_for_deploy_code-%}git submodule init --recursive  # only the fist time
 git submodule upate{%endif%}
 ```
 
@@ -49,7 +49,7 @@ docker login {{cookiecutter.docker_registry}}  # use your gitlab user
 
 {%- if cookiecutter.registry_is_gitlab_registry %}
 **⚠️ See also ⚠️** the
-    [project docker registry](https://gitlab.com/dantooin_devs/mixity/container_registry)
+    [project docker registry]({{cookiecutter.git_project_url}}/container_registry)
 {%- else %}
 **⚠️ See also ⚠️** the makinacorpus doc in the docs/tools/dockerregistry section.
 {%- endif%}
@@ -85,7 +85,7 @@ After a last verification of the files, to run with docker, just type:
 ./control.sh up # Should be launched once each time you want to start the stack
 ```
 
-## Launch app as foreground
+## Launch app in foreground
 
 ```bash
 ./control.sh fg
@@ -114,17 +114,6 @@ After a last verification of the files, to run with docker, just type:
 control.sh buildimages
 ```
 
-## Calling Django manage commands
-
-```sh
-./control.sh manage [options]
-# For instance:
-# ./control.sh manage migrate
-# ./control.sh manage shell
-# ./control.sh manage createsuperuser
-# ...
-```
-
 **⚠️ Remember ⚠️** to use `./control.sh up` to start the stack before.
 
 ## Run tests
@@ -148,21 +137,3 @@ docker volume rm $id
 
 ## Doc for deployment on environments
 - [See here](./.ansible/README.md)
-
-## FAQ
-
-If you get troubles with the nginx docker env restarting all the time, try recreating it :
-
-```bash
-docker-compose -f docker-compose.yml -f docker-compose-dev.yml up -d --no-deps --force-recreate nginx backup
-```
-
-If you get the same problem with the django docker env :
-
-```bash
-docker-compose -f docker-compose.yml -f docker-compose-dev.yml stop django db
-docker volume rm oppm-postgresql # check with docker volume ls
-docker-compose -f docker-compose.yml -f docker-compose-dev.yml up -d db
-# wait fot postgis to be installed
-docker-compose -f docker-compose.yml -f docker-compose-dev.yml up django
-```
