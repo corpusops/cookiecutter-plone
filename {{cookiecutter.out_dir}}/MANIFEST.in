@@ -1,0 +1,3 @@
+include *.txt *.cfg *.rst .coveragerc
+recursive-include src/ *
+global-exclude *pyc

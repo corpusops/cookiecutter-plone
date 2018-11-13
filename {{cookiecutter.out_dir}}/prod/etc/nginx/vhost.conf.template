@@ -123,31 +123,41 @@ server {
         add_header Cache-Control "public";
     }
 
-    location ~ ^/(api/|admin/) {
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_set_header Host $http_host;
-        proxy_redirect off;
-        proxy_pass http://django:8000;
+		location ~ ^/?(zmiroot)(/.*)?$ {
+		 rewrite   ^/?(zmiroot)(/.*)?$ /VirtualHostBase/$http_x_forwarded_proto_resolved/$host:$forwarded_static_server_port/VirtualHostRoot/_vh_$1/$2 break;
+		 auth_basic            "ZMI Restricted";
+     auth_basic_user_file  /etc/nginx/htpasswd/zmi;
 
-        # Never cache the API content to prevent proxy caching
-        add_header Pragma "no-cache";
-        add_header Cache-Control "private, max-age=0, no-cache, no-store";
-    }
+		  add_header 'Access-Control-Allow-Origin' '*';
+		  add_header 'Access-Control-Allow-Credentials' 'true';
+		  add_header 'Access-Control-Allow-Methods' 'GET, POST, PUT, PATCH, OPTIONS, DELETE';
+		  add_header 'Access-Control-Allow-Headers' 'DNT,X-CustomHeader,Keep-Alive,User-Agent,X-Requested-With,If-Modified-Since,Cache-Control,Content-Type,Authorization';
 
-    location ~ ^{{cookiecutter.media_uri}}/ {
-        internal;
-        root /public/;
-    }
+		  if ($request_method = 'OPTIONS') {
+		    add_header 'Access-Control-Max-Age' 1728000;
+		    add_header 'Content-Type' 'text/plain charset=UTF-8';
+		    add_header 'Content-Length' 0;
+		   return 204;
+		  }
+		  proxy_pass http://plone0;
+		}
 
     location / {
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
         proxy_set_header Host $http_host;
         proxy_redirect off;
-        proxy_pass http://django:8000;
+        rewrite ^/?(.*)$ /VirtualHostBase/$http_x_forwarded_proto_resolved/$host:$forwarded_static_server_port{{cookiecutter.plonesite_uri}}/VirtualHostRoot/$1 break;
+        proxy_pass http://traefik:8000;
 
         # Never cache the API content to prevent proxy caching
         add_header Pragma "no-cache";
         add_header Cache-Control "private, max-age=0, no-cache, no-store";
+				if ($request_method = 'OPTIONS') {
+				  add_header 'Access-Control-Max-Age' 1728000;
+				  add_header 'Content-Type' 'text/plain charset=UTF-8';
+				  add_header 'Content-Length' 0;
+				 return 204;
+				}
     }
 
     location ~ ^/mailcatcher/ {

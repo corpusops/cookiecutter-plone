@@ -1,16 +1,22 @@
 version: '3.7'
 x-images:
   env: &env {env_file: [.env, docker.env]}
-  {{cookiecutter.app_type}}: &{{cookiecutter.app_type}}
+  plone1: &plone
     <<: [ *env ]
-    tty: true
     image: "${{'{'}}{{cookiecutter.app_type.upper()}}_IMAGE}:${{'{'}}{{cookiecutter.app_type.upper()}}_IMAGE_VERSION}"
-    environment:
-      - DJANGO_SETTINGS_MODULE=${DJANGO_SETTINGS_MODULE:-{{cookiecutter.django_settings}}.prod}
-      - DJANGO_WSGI=${DJANGO_WSGI:-{{cookiecutter.django_project_name}}.wsgi}
+    tty: true
+    image: "${PLONE_IMAGE}:${PLONE_IMAGE_VERSION}"
+    command: /bin/bash /code/init.sh instance
     depends_on:
-      - db
-      - redis
+      - zeo
+    working_dir: /code/src
+    volumes:
+    - logs:/code/var/logs/
+    - blob:/code/var/blob/
+    - zodb:/code/var/zodb/
+    - statics:/code/www
+    environment:
+      BUILDOUT: "${BUILDOUT:-buildout-prod.cfg}"
     working_dir: /code/src
     command: /bin/bash /code/init/init.sh
     volumes:
@@ -26,27 +32,15 @@ services:
     image: djfarrelly/maildev
     hostname: mailcatcher
     entrypoint: "./bin/maildev --web 80 --smtp 25 --base-pathname '/mailcatcher/'"
-  redis:
-    <<: [ *env ]
-    image: redis:4.0-alpine
-    hostname: redis
-    volumes:
-      - 'redis:/data'
-  db:
-    <<: [ *env ]
-    image: "{{cookiecutter["{0}_image".format(cookiecutter.db_mode)]}}"
-    volumes:
-      - postgresql:/var/lib/postgresql/data
   nginx:
     <<: [ *env ]
     restart: always
-    image: nginx:1.14-alpine
+    image: "{{cookiecutter.nginx_image}}",
     depends_on:
       - {{cookiecutter.app_type}}
     volumes:
       - ./prod/etc/nginx/vhost.conf.template:/etc/nginx/conf.d/vhost.conf.template
-      - mediafiles:/public/media/:ro
-      - statics:/public/static/
+      - htpasswd:/etc/nginx/htpasswd
       - logs:/logs/
     command: >
       /bin/sh -c
@@ -58,30 +52,26 @@ services:
       # Replace hostname in vhost.conf
   {{cookiecutter.app_type}}:
     <<: [ *{{cookiecutter.app_type}} ]
-  {{cookiecutter.app_type}}: {<<: [ *{{cookiecutter.app_type}} ]}
+  zeo:
+    <<: [ *{{cookiecutter.app_type}} ]
+    depends_on: [plone]
+    command: /bin/sh /code/init/init.sh zeo
+{% for i in range(cookiecutter.prod_instances|int - 1) -%}
+  {{cookiecutter.app_type}}{{loop.index0}}:
+    <<: [ *{{cookiecutter.app_type}} ]
+    depends_on: [zeo]
+{%- endfor %}
   {%- if not cookiecutter.remove_cron %}
   cron:
     <<: [ *{{cookiecutter.app_type}} ]
-    depends_on:
-      - {{cookiecutter.app_type}}
+    depends_on: [plone]
     command: /bin/sh /code/init/cron.sh
   {%-endif%}
-  backup:
-    <<: [ *env ]
-    image: "corpusops/dbsmartbackup:pg10"
-    restart: always
-    volumes:
-      - backupdb-dumps:/srv/backups/
-      - backupdb-logs:/srv/backups/logs/
-      - /sys/fs/cgroup:/sys/fs/cgroup:ro
-      - ./local/backup/setup/reconfigure.yml:/setup/reconfigure.yml:ro
 volumes:
-  backupdb-logs:
-  backupdb-dumps:
-  postgresql:
-  redis:
-  mediafiles:
-  statics:
-    name: "${{'{'}}{{cookiecutter.app_type.upper()}}_NAME}-statics-${{'{'}}{{cookiecutter.app_type.upper()}}_IMAGE_VERSION}"
-    external: false
+  zopevar:
+  zodb:
+  blob:
   logs:
+  traefik:
+  statics:
+  htpasswd:

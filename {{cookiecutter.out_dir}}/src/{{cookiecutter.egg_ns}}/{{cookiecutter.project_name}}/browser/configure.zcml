@@ -1,0 +1,21 @@
+<configure
+    xmlns="http://namespaces.zope.org/zope"
+    xmlns:browser="http://namespaces.zope.org/browser"
+    xmlns:plone="http://namespaces.plone.org/plone"
+    i18n_domain="{{cookiecutter.egg_ns}}.{{cookiecutter.project_name}}">
+
+  <!-- Set overrides folder for Just-a-Bunch-Of-Templates product -->
+  <include package="z3c.jbot" file="meta.zcml" />
+  <browser:jbot
+      directory="overrides"
+      layer="{{cookiecutter.egg_ns}}.{{cookiecutter.project_name}}.interfaces.I{{cookiecutter.egg_ns.capitalize()}}{{cookiecutter.project_name.capitalize()}}Layer"
+      />
+
+  <!-- Publish static files -->
+  <plone:static
+      name="{{cookiecutter.egg_ns}}.{{cookiecutter.project_name}}"
+      type="plone"
+      directory="static"
+      />
+
+</configure>

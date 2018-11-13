@@ -5,7 +5,7 @@ __pycache__
 *.mo
 
 # {{cookiecutter.app_type.upper()}} local settings
-/src/{{cookiecutter.django_settings.replace('.', '/')}}/local.py
+/etc/sys/settings-local.cfg
 
 # Docker local settings
 /.env

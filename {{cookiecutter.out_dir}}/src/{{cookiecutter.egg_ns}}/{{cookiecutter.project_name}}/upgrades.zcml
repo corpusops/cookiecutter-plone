@@ -1,0 +1,16 @@
+<configure
+  xmlns="http://namespaces.zope.org/zope"
+  xmlns:genericsetup="http://namespaces.zope.org/genericsetup">
+
+  <!-- -*- extra stuff goes here -*- -->
+  <!--<genericsetup:upgradeStep
+    source="*"
+    destination="1001"
+    title="Reload GS profiles"
+    description=""
+    profile="{{cookiecutter.egg_ns}}.{{cookiecutter.project_name}}:default"
+    handler=".upgrades.reload_gs_profile"
+    />-->
+
+
+</configure>

@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<layers>
+  <layer
+      name="{{cookiecutter.egg_ns}}.{{cookiecutter.project_name}}"
+      interface="{{cookiecutter.egg_ns}}.{{cookiecutter.project_name}}.interfaces.I{{cookiecutter.egg_ns.capitalize()}}{{cookiecutter.project_name.capitalize()}}Layer"
+      />
+</layers>

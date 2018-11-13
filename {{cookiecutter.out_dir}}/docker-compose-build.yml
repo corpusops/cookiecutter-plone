@@ -1,12 +1,13 @@
 version: '3.7'
 x-images:
-  {{cookiecutter.app_type}}: &{{cookiecutter.app_type}}
-    build:
-      context: "."
-      args:
-        py_ver: "${DJANGO_PY_VER:-{{cookiecutter.py_ver}}}"
+  plone: &plone
+    build: {context: "."}
+    args:
+      PY_VER: "${PLONE_PY_VER:-{{cookiecutter.py_ver}}}"
+      BUILDOUT: "${BUILDOUT:-buildout.cfg}"
 services:
   {%- if not cookiecutter.remove_cron %}
   cron: {<<: [ *{{cookiecutter.app_type}} ]}
   {%-endif%}
-  {{cookiecutter.app_type}}: {<<: [ *{{cookiecutter.app_type}} ]}
+  plone: {<<: [ *plone ]}
+  zeo: {<<: [ *plone ]}

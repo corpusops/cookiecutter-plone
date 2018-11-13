@@ -13,7 +13,7 @@ use_submodule_for_deploy_code = bool(
     '{{cookiecutter.use_submodule_for_deploy_code}}'.strip())
 
 # Workaround cookiecutter no support of symlinks
-TEMPLATE = 'cookiecutter-django'
+TEMPLATE = 'cookiecutter-plone'
 SYMLINKS_DIRS = {
     ".ansible/playbooks/roles/{{cookiecutter.app_type}}_vars":
     "../../../{{cookiecutter.deploy_project_dir}}/.ansible/playbooks/roles/{{cookiecutter.app_type}}_vars",  #noqa
@@ -83,11 +83,11 @@ sed -i -re "/CMD .*cron/d" Dockerfile
 {% if not cookiecutter['{0}_host'.format(i)]%}
 git rm -rf \
    .ansible/inventory/group_vars/{{i}} \
-   src/{{cookiecutter.django_project_name}}/settings/instances/{{i}}* \
+   src/{{cookiecutter.plone_project_name}}/settings/instances/{{i}}* \
         || /bin/true
 rm -rfv \
    .ansible/inventory/group_vars/{{i}} \
-   src/{{cookiecutter.django_project_name}}/settings/instances/{{i}}*
+   src/{{cookiecutter.plone_project_name}}/settings/instances/{{i}}*
 {% endif %}
 {% endfor %}
 {% if cookiecutter.no_private %}
@@ -102,7 +102,7 @@ sed -i -re \
 	"s/PY_VER=.*/PY_VER={{cookiecutter.py_ver}}/g" \
 	Dockerfile
 sed -i -re \
-	"s/project/{{cookiecutter.django_project_name}}/g" \
+	"s/project/{{cookiecutter.plone_project_name}}/g" \
 	prod/*sh Dockerfile
 set +x
 while read f;do

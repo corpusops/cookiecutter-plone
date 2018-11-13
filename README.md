@@ -127,3 +127,8 @@ You can regenerate at a later time the project
 local/regen.sh  # and verify new files and updates
 ```
 
+
+## Credits
+- Inspiration and bits from [plone.docker](https://github.com/plone/plone.docker)
+
+
