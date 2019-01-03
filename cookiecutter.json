@@ -59,7 +59,7 @@
     "docker_image": "{%if cookiecutter.docker_registry%}{{cookiecutter.docker_registry}}/{%endif%}{{cookiecutter.simple_docker_image}}",
     "registry_user": "{%if cookiecutter.registry_is_gitlab_registry%}gitlab-ci-token{%endif%}",
     "registry_password": "{%if cookiecutter.registry_is_gitlab_registry%}$CI_JOB_TOKEN{%endif%}",
-    "nginx_image": "nginx:1.14-alpine",
+    "nginx_image": "corpusops/nginx:1.14-alpine",
     "prod_instances": "4",
     "nb_backups_to_keep": "2",
 		"plonesite_uri": "/Plone",
