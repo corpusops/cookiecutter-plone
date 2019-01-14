@@ -5,7 +5,7 @@ x-images:
       context: "."
       args:
         PY_VER: "${PLONE_PY_VER:-{{cookiecutter.py_ver}}}"
-        BUILDOUT: "${BUILDOUT:-buildout.cfg}"
+        BUILDOUT: "${BUILDOUT:-buildout-prod.cfg}"
 services:
   zeo: {<<: [ *{{cookiecutter.app_type}} ]}
   {% for i in range(cookiecutter.prod_instances|int) %}

@@ -156,10 +156,6 @@ def main():
         s += '\nrsync -azv {0}/prod/ prod/'.format(
             "{{cookiecutter.deploy_project_dir}}")
         s += '\ngit add .ansible'
-        {% if cookiecutter.remove_cron %}
-        s += ('\nsed -i -re '
-              '"s/ cron//g" .ansible/playbooks/roles/*/*/*l' )
-        {% endif %}
     s += EGITSCRIPT
     subprocess.check_call(["bash", "-c", s.format(template=TEMPLATE)])
     print(MOTD)

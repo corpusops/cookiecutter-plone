@@ -1,12 +1,11 @@
 version: '3.7'
 x-images:
   env: &env {env_file: [.env, docker.env]}
-  plone1: &plone
+  {{cookiecutter.app_type}}: &{{cookiecutter.app_type}}
     <<: [ *env ]
-    image: "${{'{'}}{{cookiecutter.app_type.upper()}}_IMAGE}:${{'{'}}{{cookiecutter.app_type.upper()}}_IMAGE_VERSION}"
     tty: true
-    image: "${PLONE_IMAGE}:${PLONE_IMAGE_VERSION}-dev"
-    command: instance start
+    # latest image is only used in prod (without dev & test tools)
+    image: "${{'{'}}{{cookiecutter.app_type.upper()}}_IMAGE}:${{'{'}}{{cookiecutter.app_type.upper()}}_IMAGE_VERSION}-dev"
     working_dir: /code
     volumes:
     - logs:/code/var/logs/
@@ -14,8 +13,6 @@ x-images:
     - data:/data
     - backups:/data/backup
     - statics:/code/www
-    environment:
-      BUILDOUT: "${BUILDOUT:-buildout.cfg}"
 services:
   mailcatcher:
     image: corpusops/mailhog
@@ -62,11 +59,14 @@ services:
     - ./etc/traefik.toml:/traefik.toml
   zeo:
     <<: [ *{{cookiecutter.app_type}} ]
-    command: zeoserver start
+    environment:
+      IMAGE_MODE: zeo
 {% for i in range(cookiecutter.prod_instances|int) %}
   {{cookiecutter.app_type}}{%if i%}{{i+1}}{%endif%}:{%if not i%} &plone_worker{%endif%}
     <<: [ *{{cookiecutter.app_type}}{%if i%}_worker{%endif%} ]
     depends_on: [zeo]
+    {% if not i %}environment:
+      IMAGE_MODE: "{{cookiecutter.app_type}}"{%- endif %}
 {%- endfor %}
 volumes:
   data:

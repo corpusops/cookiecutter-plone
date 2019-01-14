@@ -1,7 +1,11 @@
 version: '3.7'
 x-images:
   {{cookiecutter.app_type}}: &{{cookiecutter.app_type}}
-    build: {context: ".", args: {BUILD_DEV: "y"}}
+    build:
+      context: "."
+      args:
+        BUILD_DEV: "y"
+        BUILDOUT: "${BUILDOUT:-buildout.cfg}"
 services:
   {% for i in range(cookiecutter.prod_instances|int) %}
   {{cookiecutter.app_type}}{%if i%}{{i+1}}{%endif%}: {<<: [ *{{cookiecutter.app_type}} ]}
