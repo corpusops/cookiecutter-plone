@@ -16,11 +16,11 @@ virtualenv --python=python3 ~/tools/cookiecutter
 - then locally (replace with your values)
 
     ```sh
-    cd ~/.cookiecutters/cookiecutter-django \
+    cd ~/.cookiecutters/cookiecutter-plone \
         && git fetch origin && git reset --hard origin/master \
         && cd -
     cookiecutter --no-input -f -o ~/out_dir \
-        https://github.com/corpusops/cookiecutter-django.git \
+        https://github.com/corpusops/cookiecutter-plone.git \
         name=foo \
         tld_domain=mydomain.com \
         git_server=git.foo.com \
@@ -97,8 +97,8 @@ copy/paste/adapt the content
 ## Init dev and and test locally
 ```sh
 ./control.sh init  # init conf files
-./control.sh build django
-./control.sh build  # will be faster as many images are based on django
+./control.sh build plone
+./control.sh build  # will be faster as many images are based on plone
 ```
 
 ## Push to gitlab
@@ -110,13 +110,13 @@ copy/paste/adapt the content
 - Deploy manually one time to see everything is in place<br/>
   Remember:
     - Your local copy is synced as the working directory on target env (with exclusions, see playbooks)
-    - The ``cops_django_docker_tag`` controls which docker image is deployed.
+    - The ``cops_plone_docker_tag`` controls which docker image is deployed.
 
     ```sh
     .ansible/scripts/call_ansible.sh .ansible/playbooks/deploy_key_setup.yml
     .ansible/scripts/call_ansible.sh -vvv .ansible/playbooks/ping.yml -l dev  # or staging
     .ansible/scripts/call_ansible.sh -vvv .ansible/playbooks/app.yml \
-         -e "{cops_django_docker_tag: dev}" -l dev  # or staging
+         -e "{cops_plone_docker_tag: dev}" -l dev  # or staging
     ```
 
 ## Update project
