@@ -4,7 +4,5 @@
 #
 # generate with
 # </dev/urandom tr -dc 'A-Za-z0-9' | head -c 8; echo
-cops_{{cookiecutter.app_type}}_db_password: supersecret
-# generate with
-# </dev/urandom tr -dc 'A-Za-z0-9' | head -c 64; echo
-cops_{{cookiecutter.app_type}}_secret_key: supersecretsupercret
+# cops_{{cookiecutter.app_type}}_http_protect_password: "CHANGEME21q23sdf65azdsx56"
+# cops_{{cookiecutter.app_type}}_admin_password: "CHANGEME5895634qsd"

@@ -1,4 +1,12 @@
 # optimize internal nginx buffers
+{{ "{{" }} $test := list "PLONE__SITE_PATH" "PLONE__HTTP_PROTECT_PASSWORD" "PLONE__HTTP_PROTECT_USER" "PLONE__ADMIN_PASSWORD" "PLONE__ADMIN" }}
+{{ "{{" }} $c := . }}
+{{ "{{" }} range $i, $v := $test }}
+{{ "{{" }} if not (index $c.Env $v) }}
+{{ "{{" }} printf "variables not set: %s" $v | fail }}
+{{ "{{" }} end }}
+{{ "{{" }} end }}
+
 types_hash_max_size 2048;
 variables_hash_max_size 1024;
 variables_hash_bucket_size 256;
@@ -50,6 +58,11 @@ server {
 
     server_name localhost;
     # server_name_in_redirect on;
+    {{'{{'}} if .Env.PLONE__HTTP_PROTECT_PASSWORD }}
+    auth_basic            "Restricted";
+    auth_basic_user_file  /etc/htpasswd-protect;
+    {{'{{'}} end }}
+
 
     error_log  /logs/{{cookiecutter.app_type}}-error.log  crit;
     access_log /logs/{{cookiecutter.app_type}}-access.log custom_combined if=$method_loggable;
@@ -114,7 +127,7 @@ server {
     location ~ ^/?(zmiroot)(/.*)?$ {
       rewrite   ^/?(zmiroot)(/.*)?$ /VirtualHostBase/$http_x_forwarded_proto_resolved/$host:$forwarded_static_server_port/VirtualHostRoot/_vh_$1/$2 break;
       auth_basic            "ZMI Restricted";
-      auth_basic_user_file  /etc/nginx/htpasswd/zmi;
+      auth_basic_user_file  /etc/htpasswd-zmi;
 
        add_header 'Access-Control-Allow-Origin' '*';
        add_header 'Access-Control-Allow-Credentials' 'true';
@@ -134,8 +147,8 @@ server {
       proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
       proxy_set_header Host $http_host;
       proxy_redirect off;
-      rewrite ^/?(.*)$ /VirtualHostBase/$http_x_forwarded_proto_resolved/$host:$forwarded_static_server_port${PLONE__SITE_URL}}/VirtualHostRoot/$1 break;
-      proxy_pass http://traefik;
+      rewrite ^/?(.*)$ /VirtualHostBase/$http_x_forwarded_proto_resolved/$host:$forwarded_static_server_port{{'{{'}}.Env.PLONE__SITE_PATH}}/VirtualHostRoot/$1 break;
+      proxy_pass http://utraefik;
 
       # Never cache the API content to prevent proxy caching
       add_header Pragma "no-cache";

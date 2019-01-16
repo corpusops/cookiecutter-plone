@@ -43,10 +43,31 @@ services:
     - ./etc/nginx/vhost.conf.template:/etc/nginx/conf.d/default.conf.template
     - htpasswd:/etc/nginx/htpasswd
     - logs:/logs/
-    command: >
-      /bin/sh -c "
-      CONF_PREFIX=PLONE__ confenvsubst.sh /etc/nginx/conf.d/default.conf.template
-      && exec /bin/supervisord.sh"
+    command:
+    - /bin/bash
+    - "-c"
+    - |-
+      set -e
+      t=/etc/nginx/conf.d/default.conf
+      export PLONE__ADMIN=$${PLONE__ADMIN:-admin}
+      export PLONE__ADMIN_PASSWORD=$${PLONE__ADMIN_PASSWORD:-admin}
+      export PLONE__HTTP_PROTECT_USER=$${PLONE__HTTP_PROTECT_USER:-root}
+      export PLONE__HTTP_PROTECT_PASSWORD=$${PLONE__HTTP_PROTECT_PASSWORD-}
+      touch /etc/htpasswd-protect /etc/htpasswd-zmi
+      chmod 644 /etc/htpasswd-protect /etc/htpasswd-zmi
+      if [[ -n "$$PLONE__HTTP_PROTECT_PASSWORD" ]];then
+        echo "/ htpasswd:">&2
+        echo "$$PLONE__HTTP_PROTECT_PASSWORD"\
+        | htpasswd -bim /etc/htpasswd-protect "$$PLONE__HTTP_PROTECT_USER"
+        echo "$$PLONE__ADMIN_PASSWORD"\
+        | htpasswd -bim /etc/htpasswd-protect "$$PLONE__ADMIN"
+      fi
+      if [[ -n "$$PLONE__ADMIN_PASSWORD" ]];then
+        echo "zmi htpasswd:">&2
+        echo "$$PLONE__ADMIN_PASSWORD"\
+        | htpasswd -bim /etc/htpasswd-zmi "$$PLONE__ADMIN"
+      fi
+      frep $$t.template:$$t --overwrite && exec /bin/supervisord.sh
     environment:
     - SUPERVISORD_CONFIGS=/etc/supervisor.d/cron /etc/supervisor.d/nginx
   traefik:

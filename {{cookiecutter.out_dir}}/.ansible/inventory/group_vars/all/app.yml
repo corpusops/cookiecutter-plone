@@ -6,3 +6,6 @@ cops_{{cookiecutter.app_type}}_mail_domain: "{{ cookiecutter.mail_domain }}"
 cops_{{cookiecutter.app_type}}_docker_image: "{{cookiecutter.docker_image}}"
 cops_{{cookiecutter.app_type}}_gitref: "{{'{{'}}lookup('env', 'CI_COMMIT_TAG_NAME') or lookup('env', 'CI_COMMIT_REF_NAME') or 'latest'}}"
 cops_{{cookiecutter.app_type}}_docker_tag: "{{'{{'}}cops_{{cookiecutter.app_type}}_gitref.replace('master', 'latest')}}"
+cops_plone_http_protect_user: "root"
+# if you want a real secured password, put this in crypted vault
+cops_plone_http_protect_password: "rootroot"

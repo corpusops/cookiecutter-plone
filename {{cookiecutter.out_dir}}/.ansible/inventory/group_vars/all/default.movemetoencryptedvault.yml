@@ -1,4 +1,6 @@
 ---
+cops_{{cookiecutter.app_type}}_admin_pasword: CHANGEMEadmin5456q7sdf8
+# cops_{{cookiecutter.app_type}}_http_protect_password: "CHANGEME21q23sdf65azdsx56"
 cops_deploy_ssh_key_paths:
   # replace by your env id used in the host definition inside your former inventory
   deploy:

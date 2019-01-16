@@ -32,8 +32,6 @@ x-images:
       - ./docker-compose-prod.yml:/code/docker-compose-prod.yml
       - ./docker-compose.yml:/code/docker-compose.yml
       - ./etc:/code/etc
-      - ./etc/crontabs/:/rootfs/etc/crontabs
-      - ./etc/logrotate.d/:/rootfs/etc/logrotate.d
       - ./local:/code/local
       - ./products:/code/products
       - ./requirements-dev.txt:/code/requirements-dev.txt
