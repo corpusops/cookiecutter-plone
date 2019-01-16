@@ -188,7 +188,7 @@ do_pull() {
 
 #  up [$args]: start stack
 do_up() {
-    local bars=$@
+    local bargs=$@
     set -- vv $DC up
     if [[ -z $NO_BACKGROUND ]];then bargs="-d $bargs";fi
     $@ $bargs
@@ -216,7 +216,7 @@ stop_containers() {
 #  fg: launch app container in foreground (using entrypoint)
 do_fg() {
     stop_containers
-	if [[ -n $@ ]];then
+    if [[ -n $@ ]];then
         vv $DC run --rm --no-deps --use-aliases --service-ports $APP_CONTAINER ${@}
     else
         vv $DC run --rm --no-deps --use-aliases --service-ports $APP_CONTAINER gosu plone bin/instance fg
@@ -301,21 +301,24 @@ do_instance() {
 }
 #  tests [$tests]: run tests
 do_test() {
-    local bargs=${@:-tests}
-    stop_containers
-    set -- vv do_shell \
-        "chown {{cookiecutter.app_type}} ../.tox
-        && gosu {{cookiecutter.app_type}} $VENV/bin/tox -c ../tox.ini -e $bargs"
-    "$@"
+    exec $DC run --no-deps --rm plone "bin/test ${@-}"
 }
 
 do_tests() { do_test $@; }
 
 #  linting: run linting tests
-do_linting() { do_test linting; }
+do_linting() {
+    exec $DC run --no-deps --rm plone \
+    "set -ex;cd src;\
+     pylama -o ../setup.cfg;\
+     isort -sp ../setup.cfg -c -rc --quiet"
+}
 
 #  coverage: run coverage tests
-do_coverage() { do_test coverage; }
+do_coverage() {
+    exec $DC run --no-deps --rm plone \
+    "set -e;coverage run --source=src bin/test ${@-};coverage report"
+}
 
 do_main() {
     local args=${@:-usage}

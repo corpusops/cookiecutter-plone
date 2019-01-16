@@ -1,9 +1,9 @@
 # -*- coding: utf-8 -*-
 """Setup tests for this package."""
+from {{cookiecutter.egg_ns}}.{{cookiecutter.project_name}}.testing import {{cookiecutter.egg_ns.upper()}}_{{cookiecutter.project_name.upper()}}_INTEGRATION_TESTING  # noqa
 from plone import api
 from plone.app.testing import setRoles
 from plone.app.testing import TEST_USER_ID
-from {{cookiecutter.egg_ns}}.{{cookiecutter.project_name}}.testing import {{cookiecutter.egg_ns.upper()}}_{{cookiecutter.project_name.upper()}}_INTEGRATION_TESTING  # noqa
 
 import unittest
 

@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
+from {{cookiecutter.egg_ns}}.{{cookiecutter.project_name}}.testing import {{cookiecutter.egg_ns.upper()}}_{{cookiecutter.project_name.upper()}}_ACCEPTANCE_TESTING  # noqa
 from plone.app.testing import ROBOT_TEST_LEVEL
 from plone.testing import layered
-from {{cookiecutter.egg_ns}}.{{cookiecutter.project_name}}.testing import {{cookiecutter.egg_ns.upper()}}_{{cookiecutter.project_name.upper()}}_ACCEPTANCE_TESTING  # noqa
 
 import os
 import robotsuite

@@ -1,2 +1,10 @@
 # packages to put in global site packages in dev
+tox
+coverage
+isort
+pylama
+tblib
+eradicate
+xlrd
+
 pdb_clone
