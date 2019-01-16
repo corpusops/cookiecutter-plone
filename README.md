@@ -1,4 +1,4 @@
-# Init a django project
+# Init a plone project
 
 Idea is to create it with a wonderful python tool called
 [cookiecutter](https://github.com/audreyr/cookiecutter)
