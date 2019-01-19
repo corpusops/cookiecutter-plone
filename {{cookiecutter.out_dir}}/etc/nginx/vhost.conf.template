@@ -1,5 +1,5 @@
 # optimize internal nginx buffers
-{{ "{{" }} $test := list "PLONE__SITE_PATH" "PLONE__HTTP_PROTECT_PASSWORD" "PLONE__HTTP_PROTECT_USER" "PLONE__ADMIN_PASSWORD" "PLONE__ADMIN" }}
+{{ "{{" }} $test := list "PLONE__SITE_PATH" "PLONE__ADMIN_PASSWORD" "PLONE__ADMIN" }}
 {{ "{{" }} $c := . }}
 {{ "{{" }} range $i, $v := $test }}
 {{ "{{" }} if not (index $c.Env $v) }}

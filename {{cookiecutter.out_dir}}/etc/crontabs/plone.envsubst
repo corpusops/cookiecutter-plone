@@ -1,2 +1,0 @@
-# restart plone everyday
-$PLONE__CRON_RESTART plone forego restart plone

@@ -9,3 +9,7 @@ cops_{{cookiecutter.app_type}}_docker_tag: "{{'{{'}}cops_{{cookiecutter.app_type
 cops_plone_http_protect_user: "root"
 # if you want a real secured password, put this in crypted vault
 cops_plone_http_protect_password: "rootroot"
+
+cops_plone_restarted_plones: "{% for i in range(cookiecutter.prod_instances|int) %} {{cookiecutter.app_type}}{%if i%}{{i+1}}{%endif%}{%endfor%}"
+cops_plone_restarted_services: "{{'{{'}}cops_plone_restarted_services_default.replace(
+  ' plone',  ' {0}'.format(cops_plone_restarted_plones))}}"

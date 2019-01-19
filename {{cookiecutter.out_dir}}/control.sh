@@ -219,7 +219,7 @@ do_fg() {
     if [[ -n $@ ]];then
         vv $DC run --rm --no-deps --use-aliases --service-ports $APP_CONTAINER ${@}
     else
-        vv $DC run --rm --no-deps --use-aliases --service-ports $APP_CONTAINER gosu plone bin/instance fg
+        vv $DC run --rm --no-deps --use-aliases --service-ports $APP_CONTAINER bin/instance fg
     fi
 }
 

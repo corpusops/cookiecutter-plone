@@ -1,0 +1,2 @@
+# restart plone everyday
+{{'{{'}}.Env.PLONE__CRON_RESTART}} plone sh -c "set -x && ctl='supervisord-go -c /etc/supervisord-go/supervisord.conf ctl' && $ctl stop plone && $ctl start plone" 2>&1 | tee -a /var/log/cron.log

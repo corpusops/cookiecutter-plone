@@ -188,7 +188,7 @@ build_images: &build_images
   script:
   - &launch_test_stack |-
     sh -c 'for i in $DOCKER_SERVICES;
-     do ./control.sh up -d --force-recreate --no-deps $i;done'
+     do ./control.sh up --force-recreate --no-deps $i;done'
 
 {% set testsc = (not cookiecutter.test_tests) and '#' or '' -%}
 {{testsc}}tests:

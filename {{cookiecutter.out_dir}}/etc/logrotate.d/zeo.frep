@@ -1,12 +1,12 @@
-rotate $PLONE__ROTATE
+rotate {{'{{'}}.Env.PLONE__ROTATE}}
 weekly
 create
 compress
 delaycompress
 /logs/zeo*.log {
-    user $PLONE__USER $PLONE__USER
+    user {{'{{'}}.Env.PLONE__USER}} {{'{{'}}.Env.PLONE__USER}}
     compress
-    rotate $PLONE__ROTATE
+    rotate {{'{{'}}.Env.PLONE__ROTATE}}
     daily
     notifempty
     size 10M
