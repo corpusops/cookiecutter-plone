@@ -26,7 +26,6 @@ local/*/bin/cops_apply_role --become \
   [docker](https://docs.docker.com/install/#releases) and
   [docker-compose](https://docs.docker.com/compose/install/).
 
-
 ## Configuration
 
 Use the wrapper to init configuration files from their ``.dist`` counterpart
@@ -35,8 +34,6 @@ and adapt them to your needs.
 ```bash
 ./control.sh init
 ```
-
-**Hint**: You may have to add `0.0.0.0` to `ALLOWED_HOSTS` in `local.py`.
 
 ## Login to the app docker registry
 

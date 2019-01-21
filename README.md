@@ -42,8 +42,6 @@ virtualenv --python=python3 ~/tools/cookiecutter
     - ``registry_is_gitlab_registry=y``: act that registry is gitlab based
       and use token to register image against and
       autofill ``register_user`` and ``registry_password``.
-    - ``db_mode=<mode>``: one of ``postgres|postgis|mysql``
-    - ``haproxy=y``: generate haproxy related jobs
 
 
 ## Fill ansible inventory
