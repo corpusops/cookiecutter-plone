@@ -16,7 +16,6 @@ ping = { entryPoint = "traefik", dashboard = true }
 [backends.plone]
     healthcheck = { path = "/", interval = "15s" }
     [backends.plone.loadbalancer.stickiness]
-      cookieName = "__ac"
 {% for i in range(cookiecutter.prod_instances|int) %}
     [backends.plone.servers.plone{%if i%}{{i}}{%endif%}]
       url = "http://plone{% if i%}{{i}}{%endif%}:8080"
