@@ -85,8 +85,9 @@ rm -rfv \
 {% endfor %}
 if [ -e Dockerfile ] && [ ! -h Dockerfile ];then
 sed -i -re \
-	"s/PY_VER=.*/PY_VER={{cookiecutter.py_ver}}/g" \
-	Dockerfile
+    "s/PY_VER=.*/PY_VER={{cookiecutter.py_ver}}/g" \
+    Dockerfile
+fi
 set +x
 {% if not cookiecutter.use_submodule_for_deploy_code %}
 while read f;do

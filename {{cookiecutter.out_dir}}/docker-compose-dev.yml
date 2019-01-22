@@ -12,6 +12,7 @@ x-images:
       - ./{{cookiecutter.deploy_project_dir}}/prod/docker-initialize.py:/code/init/docker-initialize.py
       - ./{{cookiecutter.deploy_project_dir}}/prod/init.sh:/code/init/init.sh
       - ./{{cookiecutter.deploy_project_dir}}/prod/sudoer:/etc/sudoers.d/$APP_TYPE
+      - ./{{cookiecutter.deploy_project_dir}}:/code/{{cookiecutter.deploy_project_dir}}
       {%-else %}
       - ./prod/docker-initialize.py:/code/init/docker-initialize.py
       - ./prod/init.sh:/code/init/init.sh

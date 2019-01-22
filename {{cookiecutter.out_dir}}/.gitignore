@@ -26,3 +26,8 @@ __pycache__
 /.ansible/scripts/ansible_deploy_env
 /local/
 !/local/regen.sh
+
+# remove those ignore if you override those items in your configuration
+/etc/crontabs/
+/etc/logrotate.d/
+/etc/supervisor.d/

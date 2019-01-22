@@ -59,58 +59,27 @@ _shell() {
     local container="$1" user="$2" run_mode="$3"
     shift;shift;shift
     local services_ports=${services_ports-}
-    local bargs="$@"
-    local NO_VIRTUALENV=${NO_VIRTUALENV-}
-    local NO_NVM=${NO_VIRTUALENV-}
-    local NVMRC=${NVMRC:-.nvmrc}
-    local NVM_PATH=${NVM_PATH:-..}
-    local NVM_PATHS=${NVMS_PATH:-${NVM_PATH}}
-    local VENV_NAME=${VENV_NAME:-$VENV}
-    local VENV_PATHS=${VENV_PATHS:-./$VENV_NAME ../$VENV_NAME}
+    local bargs="${@:-shell}"
     local DOCKER_SHELL=${DOCKER_SHELL-}
+    local SHELL_USER=${SHELL_USER-}
     local run_mode_args=""
-    local pre="DOCKER_SHELL=\"$DOCKER_SHELL\";touch \$HOME/.control_bash_rc;
-    if [ -e /etc/default/locale ];then . /etc/default/locale;fi
-    if [ \"x\$DOCKER_SHELL\" = \"x\" ];then
-        if ( bash --version >/dev/null 2>&1 );then DOCKER_SHELL=\"bash\"; else DOCKER_SHELL=\"sh\";fi;
-    fi"
     if [[ "$run_mode" == "run" ]];then
         run_mode_args="$run_mode_args --rm --no-deps"
         if [[ -n "$services_ports" ]];then
             run_mode_args="$run_mode_args --service-ports"
         fi
     fi
-    if [[ -z "$NO_NVM" ]];then
-        if [[ -n "$pre" ]];then pre=" && $pre";fi
-        pre="for i in $NVM_PATHS;do \
-        if [ -e \$i/$NVMRC ] && ( nvm --help > /dev/null );then \
-            printf \"\ncd \$i && nvm install \
-            && nvm use && cd - && break\n\">>\$HOME/.control_bash_rc; \
-        fi;done $pre"
-    fi
-    if [[ -z "$NO_VIRTUALENV" ]];then
-        if [[ -n "$pre" ]];then pre=" && $pre";fi
-        pre="for i in $VENV_PATHS;do \
-        if [ -e \$i/bin/activate ];then \
-            printf \"\n. \$i/bin/activate\n\">>\$HOME/.control_bash_rc && break;\
-        fi;done $pre"
-    fi
-    if [[ -z "$bargs" ]];then
-        bargs="$pre && if ( echo \"\$DOCKER_SHELL\" | grep -q bash );then \
-            exec bash --init-file \$HOME/.control_bash_rc -i;\
-            else . \$HOME/.control_bash_rc && exec sh -i;fi"
-    else
-        bargs="$pre && . \$HOME/.control_bash_rc && \$DOCKER_SHELL -c \"$bargs\""
-    fi
     if [[ "$run_mode" == "dexec" ]];then
         set -- dvv docker exec -ti \
             -e TERM=$TERM -e COLUMNS=$COLUMNS -e LINES=$LINES \
-            -u $user $container sh $( if [[ -z "$bargs" ]];then echo "-i";fi ) -c "$bargs"
+            -e SHELL_USER=${SHELL_USER} \
+            $container /init.sh $bargs
     else
         set -- dvv $DC \
             $run_mode $run_mode_args \
             -e TERM=$TERM -e COLUMNS=$COLUMNS -e LINES=$LINES \
-            -u $user $container sh $( if [[ -z "$bargs" ]];then echo "-i";fi ) -c "$bargs"
+            -e SHELL_USER=${SHELL_USER} \
+            $container /init.sh $bargs
     fi
     "$@"
 }
@@ -125,7 +94,6 @@ do_dcompose() {
 #  [services_ports=1] usershell $user [$args]: open shell inside container as \$APP_USER using docker-compose run
 #       APP_USER=django ./control.sh usershell ls /
 #       APP_USER=root APP_CONTAINER=redis ./control.sh usershell ls /
-#       if services_ports is set, network alias will be set (--services-ports docker compose flag)
 #       if services_ports is set, network alias will be set (--services-ports docker compose flag)
 do_usershell() { _shell "$APP_CONTAINER" "$APP_USER" run $@;}
 
@@ -219,11 +187,7 @@ stop_containers() {
 #  fg: launch app container in foreground (using entrypoint)
 do_fg() {
     stop_containers
-    if [[ -n $@ ]];then
-        vv $DC run --rm --no-deps --use-aliases --service-ports $APP_CONTAINER ${@}
-    else
-        vv $DC run --rm --no-deps --use-aliases --service-ports $APP_CONTAINER bin/instance fg
-    fi
+    vv $DC run --rm --no-deps --use-aliases --service-ports -e IMAGE_MODE=fg $APP_CONTAINER $@
 }
 
 #  build [$args]: rebuild app containers ($BUILD_CONTAINERS)
@@ -304,7 +268,7 @@ do_instance() {
 }
 #  tests [$tests]: run tests
 do_test() {
-    exec $DC run --no-deps --rm plone "bin/test ${@-}"
+    exec $DC run --no-deps --rm plone /init.sh bin/test ${@-}
 }
 
 do_tests() { do_test $@; }
