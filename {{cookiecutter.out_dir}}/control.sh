@@ -303,9 +303,9 @@ do_linting() {
 #  coverage: run coverage tests
 do_coverage() {
     do_usershell sh -c ': \
-    && set -e
-    && coverage run --source=src bin/test ${@-}
-    && coverage report'
+        && set -e
+        && coverage run --source=src bin/test ${@-}
+        && coverage report'
 }
 
 do_main() {
