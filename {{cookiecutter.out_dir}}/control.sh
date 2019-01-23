@@ -17,7 +17,7 @@ THISSCRIPT=$0
 W="$(dirname $(readlinkf $0))"
 
 SHELL_DEBUG=${SHELL_DEBUG-${SHELLDEBUG}}
-if  [[ -n $SHELL_DEBUG ]];then set -x;fi
+if [[ -n $SHELL_DEBUG ]];then set -x;fi
 
 shopt -s extglob
 
@@ -33,6 +33,21 @@ EDITOR=${EDITOR:-vim}
 DIST_FILES_FOLDERS=". src/*/settings"
 CONTROL_COMPOSE_FILES="${CONTROL_COMPOSE_FILES:-docker-compose.yml docker-compose-dev.yml}"
 COMPOSE_COMMAND=${COMPOSE_COMMAND:-docker-compose}
+ENV_FILES="${ENV_FILES:-.env docker.env}"
+
+source_envs() {
+    set -o allexport
+    for i in $ENV_FILES;do
+        if [ -e "$i" ];then
+            eval "$(cat $i\
+                | egrep "^([^#=]+)=" \
+                | sed   's/^\([^=]\+\)=\(.*\)$/export \1=\"\2\"/g' \
+                )"
+        fi
+    done
+    set +o allexport
+}
+
 
 set_dc() {
     local COMPOSE_FILES="${@:-${CONTROL_COMPOSE_FILES}}"
@@ -59,12 +74,16 @@ _shell() {
     local container="$1" user="$2" run_mode="$3"
     shift;shift;shift
     local services_ports=${services_ports-}
+    local use_aliases=${use_aliases-}
     local bargs="${@:-shell}"
     local DOCKER_SHELL=${DOCKER_SHELL-}
-    local SHELL_USER=${SHELL_USER-}
+    local SHELL_USER=${user-${SHELL_USER}}
     local run_mode_args=""
     if [[ "$run_mode" == "run" ]];then
         run_mode_args="$run_mode_args --rm --no-deps"
+        if [[ -n "$use_aliases" ]];then
+            run_mode_args="$run_mode_args --use-aliases"
+        fi
         if [[ -n "$services_ports" ]];then
             run_mode_args="$run_mode_args --service-ports"
         fi
@@ -91,30 +110,30 @@ do_dcompose() {
 }
 
 #  ----
-#  [services_ports=1] usershell $user [$args]: open shell inside container as \$APP_USER using docker-compose run
+#  [services_ports=1] usershell $user [$args]: open shell inside \$CONTAINER as \$APP_USER using docker-compose run
 #       APP_USER=django ./control.sh usershell ls /
-#       APP_USER=root APP_CONTAINER=redis ./control.sh usershell ls /
+#       APP_USER=root CONTAINER=redis ./control.sh usershell ls /
 #       if services_ports is set, network alias will be set (--services-ports docker compose flag)
-do_usershell() { _shell "$APP_CONTAINER" "$APP_USER" run $@;}
+do_usershell() { _shell "${CONTAINER:-$APP_CONTAINER}" "$APP_USER" run $@;}
 
-#  [services_ports=1] shell [$args]: open root shell inside \$APP_CONTAINER using docker-compose run
+#  [services_ports=1] shell [$args]: open root shell inside \$CONTAINER using docker-compose run
 #       if services_ports is set, network alias will be set (--services-ports docker compose flag)
 #  ----
-do_shell()     { _shell "$APP_CONTAINER" root      run $@;}
+do_shell()     { _shell "${CONTAINER:-$APP_CONTAINER}" root      run $@;}
 
 _exec() {
     local user="$2" container="$1";shift;shift
     _shell "$container" "$user" exec $@
 }
 
-#  userexec [$args]: exec command or make an interactive shell as $user inside running \$APP_CONTAINER using docker-compose exec
+#  userexec [$args]: exec command or make an interactive shell as $user inside running \$CONTAINER using docker-compose exec
 #       APP_USER=django ./control.sh userexec ls /
 #       APP_USER=root APP_CONTAINER=redis ./control.sh userexec ls /
-do_userexec() { _exec "$APP_CONTAINER" "$APP_USER" $@;}
+do_userexec() { _exec "${CONTAINER:-$APP_CONTAINER}" "$APP_USER" $@;}
 
-#  exec [$args]: exec command or shell as root inside running \$APP_CONTAINER using docker-compose exec
+#  exec [$args]: exec command or shell as root inside running \$CONTAINER using docker-compose exec
 #  ----
-do_exec()     { _exec "$APP_CONTAINER" root      $@;}
+do_exec()     { _exec "${CONTAINER:-$APP_CONTAINER}" root      $@;}
 
 _dexec() {
     local user="$2" container="$1";shift;shift
@@ -268,23 +287,25 @@ do_instance() {
 }
 #  tests [$tests]: run tests
 do_test() {
-    exec $DC run --no-deps --rm plone /init.sh bin/test ${@-}
+    do_usershell bin/test ${@-}
 }
 
 do_tests() { do_test $@; }
 
 #  linting: run linting tests
 do_linting() {
-    exec $DC run --no-deps --rm plone \
-    "set -ex;cd src;\
-     pylama -o ../setup.cfg;\
-     isort -sp ../setup.cfg -c -rc --quiet"
+    do_usershell sh -c ': \
+        && cd src
+        && pylama -o ../setup.cfg
+        && isort -sp ../setup.cfg -c -rc --quiet'
 }
 
 #  coverage: run coverage tests
 do_coverage() {
-    exec $DC run --no-deps --rm plone \
-    "set -e;coverage run --source=src bin/test ${@-};coverage report"
+    do_usershell sh -c ': \
+    && set -e
+    && coverage run --source=src bin/test ${@-}
+    && coverage report'
 }
 
 do_main() {
