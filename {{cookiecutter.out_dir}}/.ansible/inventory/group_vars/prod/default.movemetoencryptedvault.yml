@@ -5,5 +5,5 @@
 # generate with
 # </dev/urandom tr -dc 'A-Za-z0-9' | head -c 8; echo
 # generally prod is open :)
-cops_{{cookiecutter.app_type}}_http_protect_password: ""
+# cops_{{cookiecutter.app_type}}_http_protect_password: "supersecret"
 # cops_{{cookiecutter.app_type}}_admin_password: "CHANGEME5895634qsd"
