@@ -69,7 +69,7 @@ services:
       fi
       frep $$t.template:$$t --overwrite && exec /bin/supervisord.sh
     environment:
-    - SUPERVISORD_CONFIGS=/etc/supervisor.d/cron /etc/supervisor.d/nginx
+    - SUPERVISORD_CONFIGS=/etc/supervisor.d/cron /etc/supervisor.d/nginx /etc/supervisor.d/rsyslog
   traefik:
     image: "{{cookiecutter.traefik_image}}"
     entrypoint: >
