@@ -148,7 +148,7 @@ def main():
                     SYMLINKS[i].replace('../', ''), slash, i)
         s += '\nrsync -azv {0}/Dockerfile Dockerfile'.format(
             "{{cookiecutter.deploy_project_dir}}")
-        s += '\nrsync -azv {0}/prod/ prod/'.format(
+        s += '\nrsync -azv {0}/sys/ sys/'.format(
             "{{cookiecutter.deploy_project_dir}}")
         s += '\ngit add .ansible'
     s += EGITSCRIPT
