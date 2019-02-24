@@ -1,4 +1,3 @@
-# optimize internal nginx buffers
 {{ "{{" }} $test := list "PLONE__SITE_PATH" "PLONE__ADMIN_PASSWORD" "PLONE__ADMIN" }}
 {{ "{{" }} $c := . }}
 {{ "{{" }} range $i, $v := $test }}
@@ -7,6 +6,30 @@
 {{ "{{" }} end }}
 {{ "{{" }} end }}
 
+{{'{{'}} $dciphers := "EECDH+AESGCM:EDH+AESGCM:ECDHE-RSA-AES128-GCM-SHA256:AES256+EECDH:DHE-RSA-AES128-GCM-SHA256:AES256+EDH:ECDHE-RSA-AES256-GCM-SHA384:DHE-RSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-SHA384:ECDHE-RSA-AES128-SHA256:ECDHE-RSA-AES256-SHA:ECDHE-RSA-AES128-SHA:DHE-RSA-AES256-SHA256:DHE-RSA-AES128-SHA256:DHE-RSA-AES256-SHA:DHE-RSA-AES128-SHA:ECDHE-RSA-DES-CBC3-SHA:EDH-RSA-DES-CBC3-SHA:AES256-GCM-SHA384:AES128-GCM-SHA256:AES256-SHA256:AES128-SHA256:AES256-SHA:AES128-SHA:DES-CBC3-SHA:HIGH:!aNULL:!eNULL:!EXPORT:!DES:!MD5:!PSK:!RC4" }}
+{{'{{'}} $v := dict "$" $ }}
+{{'{{'}} $v := merge $v ( dict "Env"                           .Env) }}
+{{'{{'}} $v := merge $v ( dict "certspath"                   ( .Env.SSL_CERTS_PATH | default "/certs" )                                     ) }}
+{{'{{'}} $v := merge $v ( dict "cert"                        ( .Env.SSL_CERT_PATH | default ( print $v.certspath  "/cert.crt" ))            ) }}
+{{'{{'}} $v := merge $v ( dict "key"                         ( .Env.SSL_KEY_PATH  | default ( print $v.certspath  "/cert.key" ))            ) }}
+{{'{{'}} $v := merge $v ( dict "diffie"                      ( .Env.NGINX_DH_FILE | default ( print $v.certspath  "/dhparams.pem" ))        ) }}
+{{'{{'}} $v := merge $v ( dict "nossl"                       ( .Env.NO_SSL | default "1" )                                                  ) }}
+{{'{{'}} if not ( .Env.NO_FORCE_SSL | empty ) }}
+{{'{{'}} $v := merge $v ( dict "noforcessl" .Env.NO_FORCE_SSL ) }}
+{{'{{'}} else }}
+{{'{{'}} $v := merge $v ( dict "noforcessl" ((eq $v.nossl "1") | ternary "0" "1" )) }}
+{{'{{'}} end }}
+{{'{{'}} $v := merge $v ( dict "nostatics"                   ( .Env.NO_STATICS | default "" )                                               ) }}
+{{'{{'}} $v := merge $v ( dict "server_name"                 ( .Env.NGINX_SERVERNAME | default "localhost" )                                ) }}
+{{'{{'}} $v := merge $v ( dict "server_aliases"              ( .Env.NGINX_SERVER_ALIASES | default "" )                                     ) }}
+{{'{{'}} $v := merge $v ( dict "server_name_in_redirect"     ( .Env.NGINX_SERVERNAME_IN_REDIRECT | default "on" )                           ) }}
+{{'{{'}} $v := merge $v ( dict "server_name_in_redirect_ssl" ( .Env.NGINX_SERVERNAME_IN_REDIRECT_SSL | default $v.server_name_in_redirect ) ) }}
+{{'{{'}} $v := merge $v ( dict "real_ip_from_recursive"      ( .Env.NGINX_REAL_IP_FROM_RECURSIVE | default "on" )                           ) }}
+{{'{{'}} $v := merge $v ( dict "real_ip_from"                ( .Env.NGINX_REAL_IP_FROM | default "10.0.0.0/8 172.16.0.0/12 192.168.0.0/16" )) }}
+{{'{{'}} $v := merge $v ( dict "ssl_ciphers"                 ( .Env.NGINX_SSL_CIPHERS | default $dciphers )                                 ) }}
+{{'{{'}} $v := merge $v ( dict "ssl_protocols"               ( .Env.NGINX_SSL_PROTOCOLS | default "TLSv1 TLSv1.1 TLSv1.2" )                 ) }}
+
+# optimize internal nginx buffers
 types_hash_max_size 2048;
 variables_hash_max_size 1024;
 variables_hash_bucket_size 256;
@@ -25,7 +48,10 @@ log_format custom_combined '"$remote_addr - $remote_user [$time_local] "$request
 map $request_method $method_loggable { OPTIONS 0;default 1;}
 
 # activate real_ip logging
-real_ip_recursive on;
+real_ip_recursive {{'{{'}} $v.real_ip_from_recursive }};
+{{'{{'}} range $v.real_ip_from | splitList " " }}
+set_real_ip_from {{'{{'}} . }};
+{{'{{'}} end }}
 
 # SSL offload support (use_scheme is the proxified scheme)
 # if X-SSL/X-FORWADED-PROTO header is set, we are behind a ssl gateway
@@ -49,6 +75,16 @@ map $http_x_ssl_resolved  $http_x_forwarded_protocol_resolved {default tcp;1 ssl
 map $http_x_ssl_resolved  $http_x_forwarded_ssl_resolved      {default off;1 on;}
 map $http_x_ssl_resolved  $http_x_forwarded_proto_resolved    {default http;1 https;}
 
+# Obtain best http host
+map $http_host $this_host {
+    default          $http_host;
+    ''               $host;
+}
+map $http_x_forwarded_host $best_http_host {
+    default          $http_x_forwarded_host;
+    ''               $this_host;
+}
+
 upstream utraefik {
     server traefik;
 }
@@ -56,17 +92,18 @@ upstream utraefik {
 server {
     listen 80;
 
-    server_name localhost;
+    server_name {{'{{'}} $v.server_name }}{{'{{'}}if $v.server_aliases }}{{'{{'}}$v.server_aliases}}{{'{{'}}end}};
+    server_name_in_redirect {{'{{'}} $v.server_name_in_redirect }};
     # server_name_in_redirect on;
     {{'{{'}} if .Env.PLONE__HTTP_PROTECT_PASSWORD }}
     auth_basic            "Restricted";
     auth_basic_user_file  /etc/htpasswd-protect;
     {{'{{'}} end }}
 
-
     error_log  /logs/{{cookiecutter.app_type}}-error.log  crit;
     access_log /logs/{{cookiecutter.app_type}}-access.log custom_combined if=$method_loggable;
 
+    {{'{{'}} define "vhost" }}
     gzip on;
     # adds a Vary: Accept-Encoding in the response, and it's a valid varying
     # info as we may not gzip depending on the value of Accept-Encoding
@@ -124,6 +161,7 @@ server {
         root  /public/502.html;
     }
 
+    {{'{{'}} if eq .noforcessl "1"}}# {{'{{'}} end }}if ($forwarded_ssl_scheme != "https"){ rewrite ^(.*)$ https://$host$1 permanent; }
     location ~ ^/?(zmiroot)(/.*)?$ {
       rewrite   ^/?(zmiroot)(/.*)?$ /VirtualHostBase/$http_x_forwarded_proto_resolved/$host:$forwarded_static_server_port/VirtualHostRoot/_vh_$1/$2 break;
       auth_basic            "ZMI Restricted";
@@ -164,4 +202,27 @@ server {
     location ~ ^/mailcatcher/ {
         proxy_pass http://mailcatcher:80;
     }
+    {{'{{'}} end }}
+    {{'{{'}} template "vhost" $v }}
 }
+
+{{'{{'}} if ne $v.nossl "1" }}
+
+server {
+    listen 443 ssl;
+    ssl on;
+    server_name_in_redirect {{'{{'}} $v.server_name_in_redirect_ssl }};
+    server_name             {{'{{'}} $v.server_name }}{{'{{'}}if $v.server_aliases }}{{'{{'}}$v.server_aliases}}{{'{{'}}end}};
+    ssl_ciphers             {{'{{'}} $v.ssl_ciphers }};
+    ssl_protocols           {{'{{'}} $v.ssl_protocols }};
+    ssl_certificate         {{'{{'}} $v.cert }};
+    ssl_certificate_key     {{'{{'}} $v.key }};
+    ssl_session_cache  shared:SSL:10m;
+    ssl_session_timeout 10m;
+    ssl_prefer_server_ciphers on;
+    ssl_dhparam {{'{{'}} $v.diffie }};
+    error_log  /logs/ssl-{{cookiecutter.app_type}}-error.log  crit;
+    access_log /logs/ssl-{{cookiecutter.app_type}}-access.log custom_combined if=$method_loggable;
+    {{'{{'}} template "vhost" $v }}
+}
+{{'{{'}} end }}
