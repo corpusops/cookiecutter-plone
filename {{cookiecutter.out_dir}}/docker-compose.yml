@@ -43,6 +43,7 @@ services:
     - ./etc/nginx/vhost.conf.template:/etc/nginx/conf.d/default.conf.template
     - htpasswd:/etc/nginx/htpasswd
     - logs:/logs/
+    - certs:/certs/
     command:
     - /bin/bash
     - "-c"
@@ -67,7 +68,8 @@ services:
         echo "$$PLONE__ADMIN_PASSWORD"\
         | htpasswd -bim /etc/htpasswd-zmi "$$PLONE__ADMIN"
       fi
-      frep $$t.template:$$t --overwrite && exec /bin/supervisord.sh
+      frep $$t.template:$$t --overwrite
+      exec /bin/supervisord.sh
     environment:
     - SUPERVISORD_CONFIGS=/etc/supervisor.d/cron /etc/supervisor.d/nginx /etc/supervisor.d/rsyslog
   traefik:
@@ -93,6 +95,7 @@ volumes:
   data:
   backups:
   logs:
+  certs:
   traefik:
   statics:
   mails:
