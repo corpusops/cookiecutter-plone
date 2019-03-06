@@ -133,4 +133,4 @@ docker volume rm $id
 ```
 
 ## Doc for deployment on environments
-- [See here](./.ansible/README.md)
+- [See here](./docs/README.md)
