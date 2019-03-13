@@ -25,6 +25,7 @@ VENV=venv
 APP={{cookiecutter.app_type}}
 APP_USER=${APP_USER:-${APP}}
 APP_CONTAINER=${APP_CONTAINER:-${APP}}
+APP_CONTAINERS="^($APP_CONTAINER|zeo)"
 DEBUG=${DEBUG-}
 NO_BACKGROUND=${NO_BACKGROUND-}
 BUILD_PARALLEL=${BUILD_PARALLEL-1}
@@ -47,7 +48,6 @@ source_envs() {
     done
     set +o allexport
 }
-
 
 set_dc() {
     local COMPOSE_FILES="${@:-${CONTROL_COMPOSE_FILES}}"
@@ -79,6 +79,10 @@ _shell() {
     local DOCKER_SHELL=${DOCKER_SHELL-}
     local SHELL_USER=${user-${SHELL_USER}}
     local run_mode_args=""
+    local initsh=""
+    if ( echo $container |egrep -q "$APP_CONTAINERS" );then
+        local initsh="/init.sh"
+    fi
     if [[ "$run_mode" == "run" ]];then
         run_mode_args="$run_mode_args --rm --no-deps"
         if [[ -n "$use_aliases" ]];then
@@ -92,13 +96,13 @@ _shell() {
         set -- dvv docker exec -ti \
             -e TERM=$TERM -e COLUMNS=$COLUMNS -e LINES=$LINES \
             -e SHELL_USER=${SHELL_USER} \
-            $container /init.sh $bargs
+            $container $bargs
     else
         set -- dvv $DC \
             $run_mode $run_mode_args \
             -e TERM=$TERM -e COLUMNS=$COLUMNS -e LINES=$LINES \
             -e SHELL_USER=${SHELL_USER} \
-            $container /init.sh $bargs
+            $container $initsh $bargs
     fi
     "$@"
 }
@@ -110,14 +114,14 @@ do_dcompose() {
 }
 
 #  ----
-#  [services_ports=1] usershell $user [$args]: open shell inside \$CONTAINER as \$APP_USER using docker-compose run
+#  [services_ports=1] usershell $user [$args]: open shell inside $CONTAINER as $APP_USER using docker-compose run
 #       APP_USER=django ./control.sh usershell ls /
 #       APP_USER=root CONTAINER=redis ./control.sh usershell ls /
-#       if services_ports is set, network alias will be set (--services-ports docker compose flag)
+#       if services_ports is set, network alias will be set (--services-ports docker-compose run flag)
 do_usershell() { _shell "${CONTAINER:-$APP_CONTAINER}" "$APP_USER" run $@;}
 
-#  [services_ports=1] shell [$args]: open root shell inside \$CONTAINER using docker-compose run
-#       if services_ports is set, network alias will be set (--services-ports docker compose flag)
+#  [services_ports=1] shell [$args]: open root shell inside $CONTAINER using docker-compose run
+#       if services_ports is set, network alias will be set (--services-ports docker-compose run flag)
 #  ----
 do_shell()     { _shell "${CONTAINER:-$APP_CONTAINER}" root      run $@;}
 
@@ -126,7 +130,7 @@ _exec() {
     _shell "$container" "$user" exec $@
 }
 
-#  userexec [$args]: exec command or make an interactive shell as $user inside running \$CONTAINER using docker-compose exec
+#  userexec [$args]: exec command or make an interactive shell as $user inside running $CONTAINER using docker-compose exec
 #       APP_USER=django ./control.sh userexec ls /
 #       APP_USER=root APP_CONTAINER=redis ./control.sh userexec ls /
 do_userexec() { _exec "${CONTAINER:-$APP_CONTAINER}" "$APP_USER" $@;}
@@ -147,16 +151,16 @@ _dexec() {
     _shell "$container" "$user" dexec $@
 }
 
-#  duserexec $container  [$args]: exec command or make an interactive shell as $user inside running \$APP_CONTAINER using docker exec
-#       APP_USER=django ./control.sh duserexec -> run interactive shell inside default container
-#       APP_USER=django ./control.sh duserexec foo123 -> run interactive shell inside foo123 container
-#       APP_USER=django ./control.sh duserexec django_123 ls / -> run comand inside foo123 container
+#  duserexec $container  [$args]: exec command or make an interactive shell as $user inside running $APP_CONTAINER using docker exec
+#       APP_USER=django ./control.sh duserexec -> run interactive shell inside default CONTAINER
+#       APP_USER=django ./control.sh duserexec foo123 -> run interactive shell inside foo123 CONTAINER
+#       APP_USER=django ./control.sh duserexec django_123 ls / -> run comand inside foo123 CONTAINER
 do_duserexec() {
     local container="${1-}";if [[ -n "${1-}" ]];then shift;fi
     _dexec "${container}" "$APP_USER" $@;
 }
 
-#  dexec $container  [$args]: exec command or make an interactive shell as root inside running \$APP_CONTAINER using docker exec
+#  dexec $container  [$args]: exec command or make an interactive shell as root inside running $APP_CONTAINER using docker exec
 #  ----
 do_dexec() {
     local container="${1-}";if [[ -n "${1-}" ]];then shift;fi
