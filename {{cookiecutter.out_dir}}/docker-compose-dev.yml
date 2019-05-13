@@ -1,4 +1,6 @@
 version: '3.7'
+{% set nginxc    = (not cookiecutter.nginx_in_dev) and '#' or '' %}
+{% set nginxsslc = (not cookiecutter.ssl_in_dev) and '#' or '' %}
 x-images:
   bypass: &bypass
     command: 'sh -c "while true;do echo notstarted;sleep 65000;done"'
@@ -9,14 +11,18 @@ x-images:
     - BUILDOUT=buildout.cfg
     volumes:
       {%-if cookiecutter.use_submodule_for_deploy_code %}
-      - ./{{cookiecutter.deploy_project_dir}}/sys/docker-initialize.py:/code/sys/docker-initialize.py
-      - ./{{cookiecutter.deploy_project_dir}}/sys/init.sh:/code/init/init.sh
       - ./{{cookiecutter.deploy_project_dir}}/sys/sudoer:/etc/sudoers.d/$APP_TYPE
+      - ./{{cookiecutter.deploy_project_dir}}/sys/init.sh:/code/sys/init.sh
+      - ./{{cookiecutter.deploy_project_dir}}/sys/init.sh:/code/init/init.sh
+      - ./{{cookiecutter.deploy_project_dir}}/sys/etc/supervisor.d:/code/sys/etc/supervisor.d
+      - ./{{cookiecutter.deploy_project_dir}}/sys/docker-initialize.py:/code/sys/docker-initialize.py
       - ./{{cookiecutter.deploy_project_dir}}:/code/{{cookiecutter.deploy_project_dir}}
       {%-else %}
-      - ./sys/docker-initialize.py:/code/sys/docker-initialize.py
-      - ./sys/init.sh:/code/sys/init.sh
       - ./sys/sudoer:/etc/sudoers.d/$APP_TYPE
+      - ./sys/init.sh:/code/init/init.sh
+      # retrocompat
+      - ./sys/init.sh:/code/sys/init.sh
+      - ./sys/docker-initialize.py:/code/sys/docker-initialize.py
       {%- endif%}
       - ./.ansible:/code/.ansible
       - ./.coveragerc:/code/.coveragerc
@@ -49,10 +55,15 @@ x-images:
       # be eventually stale.
       # - buildoutcache:/code/var/cache
 services:
-  nginx:
-    # <<: [ *bypass ]
-    ports: ["80:80", "443:443"]
-    environment: {NO_SSL: "0"}
+  {{nginxc}}nginx:
+{% if nginxc -%}
+    <<: [ *bypass ]
+    # uncomment to activate in dev
+{%-endif%}
+  {{nginxc}}  ports:
+  {{nginxc}}  - 80:80
+  {{nginxc}}  {% if not nginxc%}{{nginxsslc}}{%endif %}- 443:443
+  {{nginxc}}  environment: {NO_SSL: "0"}
   traefik:
     # <<: [ *bypass ]
     ports: ["8079:80"]
