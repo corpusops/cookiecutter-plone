@@ -4,14 +4,18 @@ x-images:
     build:
       context: "."
       args:
+        BASE: "${PLONE_BASE_IMAGE:-{{cookiecutter.plone_base_image}}}"
         PY_VER: "${PLONE_PY_VER:-{{cookiecutter.py_ver}}}"
+        WITH_VSCODE: "${WITH_VSCODE:-0}"
+        VSCODE_VERSION: "${VSCODE_VERSION-}"
+        WITH_PYCHARM: "${WITH_PYCHARM:-0}"
+        PYCHARM_VERSION: "${PYCHARM_VERSION-}"
+        BASE: "${PLONE_BASE_IMAGE:-corpusops/ubuntu-bare:bionic}"
+        PLONE_UI_BYPASS: "${PLONE_UI_BYPASS-}"
         BUILDOUT: "${BUILDOUT:-buildout-prod.cfg}"
 services:
   zeo: {<<: [ *{{cookiecutter.app_type}} ]}
   {% for i in range(cookiecutter.prod_instances|int) %}
   {{cookiecutter.app_type}}{%if i%}{{i+1}}{%endif%}:
     <<: [ *{{cookiecutter.app_type}} ]
-    restart: unless-stopped
-    ports:
-    - "{{8080+i}}:8080"
 {%- endfor %}

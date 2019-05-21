@@ -70,7 +70,7 @@ services:
   zeo: {<<: [ *plone ]}
 {% for i in range(cookiecutter.prod_instances|int) %}  {{cookiecutter.app_type}}{%if i%}{{i+1}}{%endif%}:
     <<: [ *plone{%if i%}, *bypass{%endif%} ]
-{% if not i%}    ports: ["8080:8080"]{%endif%}
+    ports: ["{{8080+i}}:8080"{% if not i%}, "5678:5678"{%endif%}]
 {%endfor %}
 volumes:
   buildoutcache:

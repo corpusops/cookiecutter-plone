@@ -13,3 +13,4 @@ cops_plone_http_protect_password: "rootroot"
 cops_plone_restarted_plones: "{% for i in range(cookiecutter.prod_instances|int) %} {{cookiecutter.app_type}}{%if i%}{{i+1}}{%endif%}{%endfor%}"
 cops_plone_restarted_services: "{{'{{'}}cops_plone_restarted_services_default.replace(
   ' plone',  ' {0}'.format(cops_plone_restarted_plones))}}"
+{% if not cookiecutter.ui_bypass%}# {%endif%}corpusops_plone_ui_bypass: "1"
