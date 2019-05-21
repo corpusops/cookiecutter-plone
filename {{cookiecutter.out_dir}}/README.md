@@ -31,6 +31,14 @@ local/*/bin/cops_apply_role --become \
   [docker](https://docs.docker.com/install/#releases) and
   [docker-compose](https://docs.docker.com/compose/install/).
 
+
+## Update corpusops
+You may have to update corpusops time to time with
+￼
+```
+./control.sh up_corpusops
+```
+￼
 ## Configuration
 
 Use the wrapper to init configuration files from their ``.dist`` counterpart
@@ -51,7 +59,7 @@ docker login {{cookiecutter.docker_registry}}  # use your gitlab user
 
 {%- if cookiecutter.registry_is_gitlab_registry %}
 **⚠️ See also ⚠️** the
-    [project docker registry]({{cookiecutter.git_project_url}}/container_registry)
+    [project docker registry]({{cookiecutter.git_project_url.replace('ssh://', 'https://').replace('git@', '')}}/container_registry)
 {%- else %}
 **⚠️ See also ⚠️** the makinacorpus doc in the docs/tools/dockerregistry section.
 {%- endif%}
@@ -166,20 +174,19 @@ docker volume ls  # hint: |grep \$app
 docker volume rm $id
 ```
 
-
 ## Reuning a precached image in dev to accelerate rebuilds
 Once you have build once your image, you have two options to reuse your image as a base to future builds, mainly to accelerate buildout successive runs.
 
 - Solution1: Use the current image as an incremental build: Put in your .env
 
     ```sh
-    PLONE_BASE_IMAGE={{ cookiecutter.docker_image }}:latest-dev
+    {{cookiecutter.app_type.upper()}}_BASE_IMAGE={{ cookiecutter.docker_image }}:latest-dev
     ```
 
 - Solution2: Use a specific tag: Put in your .env
 
     ```sh
-    PLONE_BASE_IMAGE=a tag
+    {{cookiecutter.app_type.upper()}}_BASE_IMAGE=a tag
     # this <a_tag> will be done after issuing: docker tag registry.makina-corpus.net/mirabell/chanel:latest-dev a_tag
     ```
 
