@@ -70,3 +70,8 @@ yarn-error.log
 
 #system files
 .ds_store
+
+# autocheckouts
+src/*
+!src/{{cookiecutter.egg_ns}}
+
