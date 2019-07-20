@@ -36,15 +36,22 @@ CONTROL_COMPOSE_FILES="${CONTROL_COMPOSE_FILES:-docker-compose.yml docker-compos
 COMPOSE_COMMAND=${COMPOSE_COMMAND:-docker-compose}
 ENV_FILES="${ENV_FILES:-.env docker.env}"
 
+join_by() { local IFS="$1"; shift; echo "$*"; }
 
 source_envs() {
     set -o allexport
     for i in $ENV_FILES;do
         if [ -e "$i" ];then
-            eval "$(cat $i\
-                | egrep "^([^#=]+)=" \
-                | sed   's/^\([^=]\+\)=\(.*\)$/export \1=\"\2\"/g' \
-                )"
+            while read vardef;do
+                var="$(echo "$vardef" | awk -F= '{print $1}')"
+                val="$(echo "$vardef" | sed "s/^[^=]\+=//g")"
+                if ( echo "$val" | egrep -q "'" )  || ! ( echo "$val" | egrep '"' ) ;then
+                    eval "$var=\"$val\""
+                else
+                    eval "$var='$val'"
+                fi
+            done < <( \
+                cat $i| egrep -v "^\s*#" | egrep "^([a-zA-Z0-9_]+)=" )
         fi
     done
     set +o allexport
@@ -168,7 +175,7 @@ do_dexec() {
     _dexec "${container}" root      $@;
 }
 
-#  install_docker: install docker and docker-compose on ubuntu
+#  install_docker: install docker and docker-compose on ubuntu
 do_install_docker() {
     vv .ansible/scripts/download_corpusops.sh
     vv .ansible/scripts/setup_corpusops.sh
@@ -176,7 +183,7 @@ do_install_docker() {
         local/*/*/corpusops.roles/services_virt_docker/role.yml
 }
 
-#  pull [$args]: pull stack container images
+#  pull [$args]: pull stack container images
 do_pull() {
     vv $DC pull $@
 }
@@ -399,6 +406,7 @@ do_main() {
     actions_{{cookiecutter.app_type}}="tests|test|coverage|linting|instance|python"
     actions="@($actions|$actions_{{cookiecutter.app_type}})"
     action=${1-}
+    source_envs
     if [[ -n $@ ]];then shift;fi
     set_dc
     case $action in
