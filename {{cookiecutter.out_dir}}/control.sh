@@ -188,6 +188,14 @@ do_pull() {
     vv $DC pull $@
 }
 
+
+#  ps [$args]: ps
+do_ps() {
+    local bargs=$@
+    set -- vv $DC ps
+    $@ $bargs
+}
+
 #  up [$args]: start stack
 do_up() {
     local bargs=$@
@@ -196,12 +204,6 @@ do_up() {
     $@ $bargs
 }
 
-#  down [$args]: down stack
-do_down() {
-    local bargs=$@
-    set -- vv $DC down
-    $@ $bargs
-}
 
 #  run [$args]: run stack
 do_run() {
@@ -214,6 +216,13 @@ do_run() {
 do_rm() {
     local bargs=$@
     set -- vv $DC rm
+    $@ $bargs
+}
+
+#  down [$args]: down stack
+do_down() {
+    local bargs=$@
+    set -- vv $DC down
     $@ $bargs
 }
 
@@ -335,7 +344,7 @@ do_coverage() {
 }
 
 #  open_perms_valve: Give the host user rights to edit most common files inside the container
-#                    wich are generally mounted as docker volumes from the host via posix ACLs
+#                    which are generally mounted as docker volumes from the host via posix ACLs
 #                    This won't work on OSX for now.
 do_open_perms_valve() {
     SUPEREDITOR="${SUPEREDITOR:-$(id -u)}"
