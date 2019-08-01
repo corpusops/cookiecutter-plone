@@ -219,3 +219,16 @@ The ansible playbook do:
 - Install systemd launcher and start it
 - Restart explictly each docker services
 - Cleanup stale docker volumes
+
+## Use docker-compose in hosted environments (aka staging/prod)
+### by hand
+```sh
+cd /srv/docker/{{cookiecutter.lname}}  # where your project folder is
+docker-compose -f "docker-compose.yml" -f docker-compose-prod.yml -p "{{cookiecutter.lname}}" $ARGS
+```
+
+### via control.sh
+```sh
+cd /srv/docker/{{cookiecutter.lname}}  # where your project folder is
+# if this is not already in ./.env: export CONTROL_COMPOSE_FILES="docker-compose.yml docker-compose-prod.yml"
+./control.sh $args
