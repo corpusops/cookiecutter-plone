@@ -413,7 +413,7 @@ do_vscode() {
 do_main() {
     local args=${@:-usage}
     local actions="up_corpusops|shell|usage|install_docker|setup_corpusops|open_perms_valve|get_container_code|vscode"
-    actions="$actions|yamldump|stop|usershell|exec|userexec|dexec|duserexec|dcompose"
+    actions="$actions|yamldump|stop|usershell|exec|userexec|dexec|duserexec|dcompose|ps"
     actions="$actions|init|up|fg|pull|build|buildimages|down|rm|run"
     actions_{{cookiecutter.app_type}}="tests|test|coverage|linting|instance|python"
     actions="@($actions|$actions_{{cookiecutter.app_type}})"
