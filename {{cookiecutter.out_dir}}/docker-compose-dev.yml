@@ -16,10 +16,12 @@ x-images:
       - ./{{cookiecutter.deploy_project_dir}}/sys/init.sh:/code/init/init.sh
       - ./{{cookiecutter.deploy_project_dir}}/sys/etc/supervisor.d:/code/sys/etc/supervisor.d
       - ./{{cookiecutter.deploy_project_dir}}/sys/docker-initialize.py:/code/sys/docker-initialize.py
+      - ./{{cookiecutter.deploy_project_dir}}/sys/docker-initialize.py:/code/init/docker-initialize.py
       - ./{{cookiecutter.deploy_project_dir}}:/code/{{cookiecutter.deploy_project_dir}}
       {%-else %}
       - ./sys/sudoer:/etc/sudoers.d/$APP_TYPE
       - ./sys/init.sh:/code/init/init.sh
+      - ./sys/docker-initialize.py:/code/init/docker-initialize.py
       # retrocompat
       - ./sys/init.sh:/code/sys/init.sh
       - ./sys/docker-initialize.py:/code/sys/docker-initialize.py
