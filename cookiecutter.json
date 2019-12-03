@@ -79,5 +79,6 @@
     "nginx_in_dev": "y",
     "ui_bypass": "",
     "ssl_in_dev": "y",
-    "git_project_https_url": "{{cookiecutter.git_project_url.replace('ssh', 'https').replace('git@', '')}}"
+    "git_project_https_url": "{{cookiecutter.git_project_url.replace('ssh', 'https').replace('git@', '')}}",
+    "sentry_dsn": ""
 }
